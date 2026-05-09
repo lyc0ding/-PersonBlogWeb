@@ -1,6 +1,7 @@
 <template>
   <div class="container" style="width: 250px;height: 470px;" ref="boxRef">
-    <div class="box" :class="{'box-fixed': distanceToViewportTop < 100 }">
+    <!-- 改为动态绑定style来控制top值，而不是固定的类样式 -->
+    <div class="box">
       <div class="personal-info">
         <div class="background"> 
           <div class="blur-mask"></div>
@@ -9,14 +10,13 @@
         <div class="avatar" @click="ToLive()"> 
           <img src="/src/assets/img/avatar.png">
         </div>
-        <!-- <div class="nickname">sudo</div> -->
         <div class="marker" style="width: 90%;white-space: nowrap;text-overflow: ellipsis;overflow: hidden;margin-top: 20px;">
           “做都做了，做完再说”
         </div>
         <div class="overview">
           <div class="vertical-list">
-            <span>生活<br>23 </span>
-            <span>分享<br>23</span>
+            <span>文章数<br>23 </span>
+            <span>评论数<br>23</span>
             <span>访问量<br>2389</span>
           </div>
         </div>
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -51,17 +51,26 @@ const ToLive =() => {
 
 const boxRef = ref(null)
 const distanceToViewportTop = ref(0)
+const scrollY = ref(0) // 记录页面滚动距离
 
 onMounted(() => {
   calculateDistance()
-  window.addEventListener('scroll', calculateDistance)
+  // 记录初始滚动位置
+  scrollY.value = window.scrollY
+  window.addEventListener('scroll', handleScroll)
   window.addEventListener('resize', calculateDistance)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', calculateDistance)
+  window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('resize', calculateDistance)
 })
+
+// 合并滚动处理逻辑
+const handleScroll = () => {
+  calculateDistance()
+  scrollY.value = window.scrollY // 更新滚动距离
+}
 
 const calculateDistance = () => {
   if (boxRef.value) {
@@ -75,10 +84,9 @@ const calculateDistance = () => {
 .box {
   width: 250px;
   height: 470px;
-  /* background: linear-gradient(135deg, #a6ffea 0%, #f9ffb7 100%);  */
   background-color: white;
   transition: all 0.3s ease-out;
-  position: relative;
+  /* 移除默认position，改为动态绑定 */
   /* border-radius: 15px; */
 }
 
@@ -206,10 +214,5 @@ const calculateDistance = () => {
   cursor: pointer;
 }
 
-.box-fixed {
-  position: fixed;
-  top: 100px;
-  transition: all 0.3s ease-out;
-}
-
+/* 移除固定的box-fixed类样式 */
 </style>

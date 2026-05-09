@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import ToIndex from '@/components/Global/ToIndex.vue';
+import ToIndex from '@/components/global/ToIndex.vue';
 import Carousel from './Carousel.vue';
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 
@@ -57,7 +57,6 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
   z-index: 1;
   width: 100%;
   height: 100vh;
-  background-color: pink;
 }
 
 /* 内容区域样式 - 会滚动覆盖在banner上方 */

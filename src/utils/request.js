@@ -37,19 +37,4 @@ service.interceptors.response.use(
     }
 )
 
-// params不传参默认为null，否则为传入参数
-export function get(url,params=null) {
-  return service({
-    url,
-    method: 'get',
-    params, // GET 参数放在 params
-  });
-}
-
-export function post(url,data={}) {
-  return service({
-    url,
-    method: 'post',
-    data, // GET 参数放在 params
-  });
-}
+export default service

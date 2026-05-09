@@ -111,7 +111,7 @@
 </template>
 
 <script setup>
-import PersonBox from '../chatty/personbox/Index.vue'
+import PersonBox from '../../components/sider/Introduction.vue'
 import { ref , onMounted} from 'vue';
 
 const commentSend = ref({

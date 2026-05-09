@@ -10,7 +10,7 @@
         <div class="paragraph" 
              v-for="item in contentList" 
              :key="item.id"
-             :style="{'background-image': `url(${item.img})`}">  <!-- 关键修改：动态设置背景图 -->
+             :style="{'background-image': `url(${item.img})`}">
             <div class="image " :class="[calculate(item.id) ? 'img-left':'img-right']">
                 <img :src="item.img" alt="内容图片">
             </div>

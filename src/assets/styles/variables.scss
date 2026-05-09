@@ -1,0 +1,73 @@
+// --------------------------
+// 1. 浅色模式（默认）
+// --------------------------
+// 浅色模式配色
+$light-bg-primary: #F3F4F6; // 页面主背景 - 更柔和的极浅灰蓝
+$light-bg-secondary: #E0E7EE; // 卡片/侧边栏背景 - 浅灰天蓝
+$light-bg-tertiary: #D1E7EE; // 输入框/标签背景 - 更浅一层
+
+$light-accent: #4B8DA3; // 主题强调色（按钮/链接）- 适中的科技蓝
+$light-accent-light: #86C1C8; // 强调色hover/高亮
+$light-accent-soft: #E6F1F3; // 弱强调
+
+$light-text-primary: #2A303C; // 正文标题 - 深灰（高可读）
+$light-text-secondary: #4A5568; // 次要文字 - 中灰
+$light-text-muted: #7B8D93; // 提示/时间/小字 - 柔和灰
+
+$light-border: #B0C4D6; // 边框线
+$light-divider: #D1D8DD; // 分割线
+$light-shadow: rgba(0, 0, 0, 0.1); // 阴影（轻淡）
+
+// --------------------------
+// 2. 深色模式（护眼简约）
+// --------------------------
+$dark-bg-primary: #101418; // 页面主背景 - 深炭灰（不纯黑，更柔和）
+$dark-bg-secondary: #15191D; // 卡片/侧边栏背景
+$dark-bg-tertiary: #1E2226; // 输入框/标签背景
+
+$dark-accent: #3C8EAC; // 强调色（适配深色模式）
+$dark-accent-light: #5DA8B7;
+$dark-accent-soft: #2D3A40;
+
+$dark-text-primary: #F1F5FB; // 标题正文
+$dark-text-secondary: #B0C4D6; // 次要文字
+$dark-text-muted: #A0B4B9; // 提示小字
+
+$dark-border: #4A5258; // 边框
+$dark-divider: #40474D; // 分割线
+$dark-shadow: rgba(0, 0, 0, 0.25); // 阴影
+
+// --------------------------
+// 3. 功能色（通知、状态）
+// 全部低饱和，不刺眼
+// --------------------------
+// 功能色
+$success-color: #6DAF7B; // 绿色
+$warning-color: #C3A57A; // 暖黄色
+$error-color: #D17676; // 红色
+$info-color: $light-accent; // 依然使用主题强调色
+
+// --------------------------
+// 4. 布局通用变量
+// --------------------------
+$base-radius: 5px; // 圆角（保持小圆角）
+$base-shadow: 0 2px 8px $light-shadow; // 轻微调整阴影
+$dark-shadow-common: 0 2px 8px $dark-shadow; // 同上
+
+$container-width: 1200px; // 页面最大宽度
+$sidebar-width: 300px; // 侧边栏宽度
+$gap-normal: 20px; // 标准间距
+$gap-small: 14px; // 小间距
+$gap-xs: 10px; // 微间距
+
+// --------------------------
+// 5. 字体
+// --------------------------
+$font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+$font-size-base: 16px;
+$font-size-sm: 14px;
+$font-size-xs: 12px;
+$font-size-title: 26px; // 提升标题字体大小
+$font-size-subtitle: 22px; // 提升副标题字体大小
+$line-height-base: 1.8; // 适当增大行间距提升可读性
+$line-height-title: 1.5; // 标题行高

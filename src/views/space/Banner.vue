@@ -1,12 +1,12 @@
 <template>
-  <div id="container">
-    <div class="title">
-        <div class="title-contents">
-            <h2>碎碎念</h2>
-            <p><i class='iconfont icon-yinhao'/>&nbsp;&nbsp;已在本站留下了n条小吐槽</p>
+    <div id="container">
+        <div class="title">
+            <div class="title-contents">
+                <h2>碎碎念</h2>
+                <p><i class='iconfont icon-yinhao'/>&nbsp;&nbsp;已在本站留下了n条小吐槽</p>
+            </div>
         </div>
     </div>
-  </div>
 </template>
 
 <script setup>

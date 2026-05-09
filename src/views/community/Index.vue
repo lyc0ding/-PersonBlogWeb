@@ -4,14 +4,18 @@
 
      <div class="mian-content">
       <Main></Main>
-      <CategoryVue></CategoryVue>
+      <div style="display: flex;flex-direction: column;gap: 10px;">
+        <Introduction></Introduction>
+        <TagCloud></TagCloud>
+      </div>
      </div>
      
   </div>
 </template>
 
 <script setup>
-import CategoryVue from './direction/Category.vue';
+import TagCloud from '../../components/sider/TagCloud.vue';
+import Introduction from '@/components/sider/Introduction.vue';
 import Banner from './Banner.vue';
 import Main from './Main.vue';
 </script>

@@ -1,19 +1,15 @@
 <template>
     <div id="container">
         <p @click="toIndex()">
-            <i class="icon iconfont icon-fanhui"/>首页
+            <i class="icon iconfont icon-fanhui"/>返回
         </p>
     </div>
 </template>
 
 <script setup>
-import { ref, reactive, toRefs, onMounted} from 'vue'
-import { useRouter } from 'vue-router';
-
-const router = useRouter()
-
 const toIndex = ()=>{
-    router.push('/')
+    // 调用浏览器的历史记录返回方法
+    window.history.back();
 }
 
 </script>

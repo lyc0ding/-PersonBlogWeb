@@ -1,11 +1,11 @@
 <template>
   <div id="container">
 
-    <ImagePreviewerVue 
+    <ImagePreviewer
       :show-preview="showImagePreview"
       :current-image="currentPreviewImage"
       @close="closeImagePreview">
-    </ImagePreviewerVue>
+    </ImagePreviewer>
 
     <div class="main">
       <div class="contents">
@@ -55,8 +55,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import PersonBox from './personbox/Index.vue'
-import ImagePreviewerVue from '@/components/ImagePreviewer/Index.vue'
+import PersonBox from '../../components/sider/Introduction.vue'
+import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import MessageVue from '@/components/Message/Index.vue'
 
 // 用于存储每个段落的展开状态
