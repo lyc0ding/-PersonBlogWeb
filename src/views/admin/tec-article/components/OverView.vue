@@ -91,8 +91,8 @@
     </el-form>
 
     <div class="foorter">
-        <el-button color="#4f4f4f" plain @click="addParagraph" size="large">存草稿</el-button>
-        <el-button color="#ff6b2c" type="primary" @click="publish" size="large">发布文章</el-button>
+        <el-button plain @click="addParagraph" size="large">存草稿</el-button>
+        <el-button type="primary" @click="publish" size="large">发布文章</el-button>
     </div>
     </el-scrollbar>
     
@@ -129,10 +129,10 @@ const publish = ()=>{
 .setting-container{
     width: 100%;
     height: 100%;
-    background-color: white;
+    background-color: var(--app-surface);
     border-radius: 5px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-    color: rgb(94, 94, 94);
+    box-shadow: 0 1px 4px var(--app-shadow-soft);
+    color: var(--app-text-secondary);
     padding: 20px;
 }
 

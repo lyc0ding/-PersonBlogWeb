@@ -114,7 +114,7 @@ onUnmounted(() => {
       
       &:hover {
         transform: scale(1.1); /* 悬停时放大效果 */
-        background-color: rgba(255, 255, 255, 0.1); /* 悬停背景效果 */
+        background-color: color-mix(in srgb, var(--app-text-primary) 10%, transparent);
       }
       
       .iconfont {

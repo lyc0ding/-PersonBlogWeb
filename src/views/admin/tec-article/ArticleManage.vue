@@ -42,8 +42,8 @@
           
           <!-- 删除按钮 -->
           <el-button
-            type="text"
-            text-color="#c80000"
+            link
+            type="danger"
             size="small"
             @click="handleDelete(scope.row)"
           >
@@ -54,8 +54,8 @@
           <el-dropdown size="small" @command="handleDropdownCommand(scope.row, $event)">
             
             <el-button
-              type="text"
-              text-color="#ff4d4f"
+              link
+              type="primary"
               size="small"
             >
               更多操作

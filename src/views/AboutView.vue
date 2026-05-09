@@ -53,7 +53,7 @@ const calculate = (value) => {
 
 <style scoped>
 .container {
-    background-color: white;
+    background-color: var(--app-bg-primary);
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -72,7 +72,7 @@ const calculate = (value) => {
 
 .iconfont {
     font-size: 30px;
-    color: rgb(255, 122, 5);
+    color: var(--app-hot-icon);
     /* 添加缩放动画 */
     animation: scaleAnimation 2s infinite ease-in-out;
     /* 确保缩放中心点为图标中心 */
@@ -82,6 +82,7 @@ const calculate = (value) => {
 .title {
     margin-left: 20px;
     font-size: 23px;
+    color: var(--app-text-primary);
 }
 
 /* 喇叭缩放动画关键帧 */
@@ -107,7 +108,7 @@ const calculate = (value) => {
 .paragraph{
     width: 100%;
     height: 250px;
-    border: grey 1px solid;
+    border: 1px solid var(--app-border);
     position: relative;
     overflow: hidden;
     transition: box-shadow 0.3s ease;
@@ -117,12 +118,12 @@ const calculate = (value) => {
 .image{
     width: 30%;
     height: 100%;
-    background-color: aqua;
+    background-color: var(--app-bg-secondary);
 }
 
 .content{
     flex: 1;
-    background-color: yellow;
+    background-color: var(--app-surface-muted);
 }
 </style>
     

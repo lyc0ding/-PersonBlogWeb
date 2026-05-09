@@ -103,10 +103,10 @@ onBeforeUnmount(() => {
 }
 
 .result-box {
-    color: white;
+    color: var(--app-code-text);
     width: 100%;
     min-width: 100%;
-    background-color: #282c34;
+    background-color: var(--app-code-header-bg);
     border-radius: 5px;
 }
 
@@ -116,11 +116,11 @@ onBeforeUnmount(() => {
     padding-left: 10px;
     width: 100%;
     height: 50px;
-    border-bottom: 1px solid rgb(169, 170, 161);
+    border-bottom: 1px solid var(--app-code-header-border);
 }
 
 .box-title h3 {
-    color: #62ca48;
+    color: var(--app-code-accent);
 }
 
 .box-text {
@@ -139,7 +139,7 @@ onBeforeUnmount(() => {
     content: '|';
     position: absolute;
     animation: blink 1s infinite;
-    color: white;
+    color: var(--app-code-text);
     font-weight: bold;
 }
 

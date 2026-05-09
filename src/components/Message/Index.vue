@@ -124,7 +124,7 @@ defineExpose({
   position: fixed;
   padding: 12px 20px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--app-shadow-soft);
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
@@ -154,27 +154,27 @@ defineExpose({
 
 /* 消息类型样式 */
 .message-success {
-  background-color: #f0f9eb;
-  color: #67c23a;
-  border: 1px solid #e1f3d8;
+  background-color: var(--app-message-success-bg);
+  color: var(--app-message-success-text);
+  border: 1px solid var(--app-message-success-border);
 }
 
 .message-error {
-  background-color: #fef0f0;
-  color: #f56c6c;
-  border: 1px solid #fde2e2;
+  background-color: var(--app-message-error-bg);
+  color: var(--app-message-error-text);
+  border: 1px solid var(--app-message-error-border);
 }
 
 .message-warning {
-  background-color: #fdf6ec;
-  color: #e6a23c;
-  border: 1px solid #faecd8;
+  background-color: var(--app-message-warning-bg);
+  color: var(--app-message-warning-text);
+  border: 1px solid var(--app-message-warning-border);
 }
 
 .message-info {
-  background-color: #f4f4f5;
-  color: #909399;
-  border: 1px solid #e9e9eb;
+  background-color: var(--app-message-info-bg);
+  color: var(--app-message-info-text);
+  border: 1px solid var(--app-message-info-border);
 }
 
 /* 位置样式 */

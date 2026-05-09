@@ -84,7 +84,7 @@ const calculateDistance = () => {
 .box {
   width: 250px;
   height: 470px;
-  background-color: white;
+  background-color: var(--app-surface);
   transition: all 0.3s ease-out;
   /* 移除默认position，改为动态绑定 */
   /* border-radius: 15px; */
@@ -96,7 +96,7 @@ const calculateDistance = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: black;
+  color: var(--app-text-primary);
   padding: 100px 0 0 0;
   gap: 5px;
   box-sizing: border-box;
@@ -117,7 +117,7 @@ const calculateDistance = () => {
   bottom: 0; 
   width: 100%;
   height: 150px;
-  background-color: white;
+  background-color: var(--app-surface);
   /* 关键：透明渐变遮罩（从完全透明到不透明） */
   -webkit-mask-image: linear-gradient(to bottom, transparent, black);
   mask-image: linear-gradient(to bottom, transparent, black);
@@ -153,14 +153,14 @@ const calculateDistance = () => {
 .nickname{
   font-size: 35px;
   font-family: fantasy;
-  color: rgb(30, 30, 30);
+  color: var(--app-text-primary);
   cursor: none;
 }
 
 .marker{
   font-size: 15px;
   font-family: Arial, Helvetica, sans-serif;
-  color: gray;
+  color: var(--app-text-muted);
 }
 
 .nickname, .marker {
@@ -199,7 +199,7 @@ const calculateDistance = () => {
   margin: 0 auto;         /* 水平居中关键 */
   padding: 10px 0 0 0;        /* 增加垂直间距 */
   gap: 5px;              /* 子项间距 */
-  color: black;
+  color: var(--app-text-primary);
 }
 
 .other-link > div {
@@ -210,7 +210,7 @@ const calculateDistance = () => {
 }
 
 .other-link > div:hover {
-  color: aqua;     /* 悬停效果 */
+  color: var(--app-link-hover);
   cursor: pointer;
 }
 

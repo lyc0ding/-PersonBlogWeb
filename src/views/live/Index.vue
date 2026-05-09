@@ -15,7 +15,7 @@
           <h2>About Me</h2>
         </div>
 
-        <el-divider border-style="dashed" style="border-color: black;"/>
+        <el-divider border-style="dashed" class="theme-divider"/>
 
         <div class="aboutme-content">
           <!-- 这里可以添加关于我的具体内容 -->
@@ -65,11 +65,11 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: black;
+  color: var(--app-text-primary);
   z-index: 10;
   position: relative;
   margin-top: 100vh;
-  background-color: #fff;
+  background-color: var(--app-bg-primary);
   min-height: 100vh;
 }
 
@@ -106,8 +106,16 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
   margin-top: 100px;
   padding: 50px;
   text-align: center;
-  background-color: #f5f5f5;
+  background-color: var(--app-surface-muted);
   border-radius: 8px;
+}
+
+.theme-divider :deep(.el-divider__text) {
+  color: var(--app-text-secondary);
+}
+
+.theme-divider.el-divider--horizontal {
+  border-top-color: var(--app-border);
 }
 
 /* 禁止滚动的类 */

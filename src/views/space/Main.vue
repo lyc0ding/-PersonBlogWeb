@@ -132,10 +132,10 @@ const closeImagePreview = () => {
       .paragraph{
         width: 100%;
         /* border-radius: 15px; */
-        background-color: white;
-        color: black;
+        background-color: var(--app-surface);
+        color: var(--app-text-primary);
         position: relative;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px var(--app-shadow-soft);
         transition: all 0.3s ease;
         
         .paragraph-inner {
@@ -153,8 +153,8 @@ const closeImagePreview = () => {
           display: flex;
           border-radius: 15px 15px 0 0 ;
           padding: 10px 25px 0 25px;
-          background-color: #f8f9fa;
-          border-bottom: 1px solid #eaeaea;
+          background-color: var(--app-surface-muted);
+          border-bottom: 1px solid var(--app-divider-subtle);
 
           .paragraph-head-left{
             width: 50%;
@@ -163,7 +163,7 @@ const closeImagePreview = () => {
             h2 {
               font-size: 20px;
               margin: 15px 0 10px;
-              color: #2c3e50;
+              color: var(--app-text-primary);
               font-weight: 600;
             }
           }
@@ -173,7 +173,7 @@ const closeImagePreview = () => {
             height: 100%;
             padding: 10px;
             text-align: right;
-            color: #7f8c8d;
+            color: var(--app-text-secondary);
             font-size: 14px;
             display: flex;
             justify-content: flex-end;
@@ -188,7 +188,7 @@ const closeImagePreview = () => {
           p {
             font-size: 16px;
             line-height: 1.8;
-            color: #34495e;
+            color: var(--app-text-secondary);
             margin: 0 0 15px 0;
           }
 
@@ -198,7 +198,7 @@ const closeImagePreview = () => {
             height: auto; 
             display: block; 
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px var(--app-shadow-soft);
           }
 
           img + img {
@@ -214,12 +214,12 @@ const closeImagePreview = () => {
           user-select: none;
 
           .iconfont1{
-              color: red;
+              color: var(--app-hot-icon);
               font-size: 20px;
           }
 
           .iconfont2{
-              color: aqua;
+              color: var(--app-comments-icon);
               font-size: 20px;
           }
         }
@@ -229,14 +229,14 @@ const closeImagePreview = () => {
         width: 200px;
         padding: 8px 12px;
         text-align: center;
-        color: black;
+        color: var(--app-text-primary);
         border-radius: 4px;
         cursor: pointer;
         margin: 15px auto;
         font-size: 14px;
         transition: all 0.3s;
         position: relative;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 5px var(--app-shadow-soft);
       }
     }
   }

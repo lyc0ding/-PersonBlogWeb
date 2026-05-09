@@ -55,9 +55,9 @@
             :collapse-transition="false"
             router
             unique-opened
-            background-color="#304156"
-            text-color="#bfcbd9"
-            active-text-color="#409EFF"
+            background-color="var(--admin-sidebar-bg)"
+            text-color="var(--admin-sidebar-text)"
+            active-text-color="var(--admin-sidebar-active)"
           >
             <!-- 仪表盘 -->
             <el-menu-item index="/admin/dashboard">
@@ -212,7 +212,8 @@ onMounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f5f7f9;
+  background-color: var(--admin-layout-bg);
+  color: var(--app-text-primary);
 }
 
 /* 头部样式 */
@@ -221,10 +222,10 @@ onMounted(() => {
   height: 100px;
   justify-content: space-between;
   align-items: center;
-  background-color: #304156;
-  color: white;
+  background-color: var(--admin-header-bg);
+  color: var(--admin-header-text);
   padding: 0 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--app-shadow-soft);
   z-index: 1000;
 }
 
@@ -241,7 +242,7 @@ onMounted(() => {
 }
 
 .collapse-btn:hover {
-  color: #409EFF;
+  color: var(--admin-collapse-hover);
 }
 
 .system-title {
@@ -264,7 +265,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   cursor: pointer;
-  color: white;
+  color: var(--admin-header-text);
   gap: 8px;
 }
 
@@ -286,10 +287,10 @@ onMounted(() => {
 /* 侧边栏样式 */
 .sidebar {
   width: 220px;
-  background-color: #304156;
+  background-color: var(--admin-sidebar-bg);
   transition: width 0.3s;
   overflow-y: auto;
-  border-right: 1px solid #e6e6e6;
+  border-right: 1px solid var(--admin-sidebar-border);
 }
 
 .sidebar-collapse {
@@ -319,8 +320,8 @@ onMounted(() => {
   border-radius: 4px;
   display: flex;
   align-items: center;
-  background-color: white;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  background-color: var(--admin-breadcrumb-bg);
+  box-shadow: 0 1px 4px var(--app-shadow-soft);
   z-index: 999;
 }
 
@@ -331,7 +332,7 @@ onMounted(() => {
   min-height: calc(100% - 80px);
   border-radius: 4px;
   padding: 15px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px var(--app-shadow-soft);
 }
 
 .content > div {
@@ -340,8 +341,8 @@ onMounted(() => {
 
 /* 页脚样式 */
 .footer {
-  background-color: #304156;
-  color: #bfcbd9;
+  background-color: var(--admin-footer-bg);
+  color: var(--admin-footer-text);
   text-align: center;
   padding: 12px;
   font-size: 12px;
@@ -387,10 +388,10 @@ onMounted(() => {
 }
 
 :deep(.el-scrollbar__thumb) {
-  background-color: rgba(144, 147, 153, 0.3);
+  background-color: var(--app-scrollbar-thumb);
 }
 
 :deep(.el-scrollbar__thumb:hover) {
-  background-color: rgba(144, 147, 153, 0.5);
+  background-color: var(--app-scrollbar-thumb-hover);
 }
 </style>

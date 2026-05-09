@@ -116,7 +116,7 @@ watch(() => props.visible, (newVal) => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--app-backdrop);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -125,8 +125,9 @@ watch(() => props.visible, (newVal) => {
 
 .dialog-container {
   position: absolute;
-  background: white;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  background: var(--app-dialog-bg);
+  box-shadow: 0 2px 12px 0 var(--app-shadow-soft);
+  color: var(--app-text-primary);
   overflow: hidden;
   min-width: 400px;
   min-height: 200px;
@@ -147,7 +148,7 @@ watch(() => props.visible, (newVal) => {
 .close-btn {
   cursor: pointer;
   font-size: 20px;
-  color: #909399;
+  color: var(--app-dialog-muted);
   background: transparent;
   border: none;
   outline: none;
@@ -156,7 +157,7 @@ watch(() => props.visible, (newVal) => {
 
 /* 关闭按钮高亮 */
 .close-btn:hover {
-  color: rgb(255, 46, 46);
+  color: var(--app-dialog-danger);
 }
 
 .dialog-content {

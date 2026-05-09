@@ -8,6 +8,75 @@
   --app-border: #b0c4d6;
   --app-shadow-soft: rgba(0, 0, 0, 0.12);
 
+  --app-surface: #ffffff;
+  --app-surface-muted: #f1f5f9;
+  --app-text-muted: #64748b;
+  --app-divider-subtle: #e2e8f0;
+  --app-nav-bg: rgba(243, 244, 246, 0.82);
+  --app-nav-shadow: var(--app-shadow-soft);
+  --app-backdrop: rgba(15, 23, 42, 0.45);
+  --app-loading-overlay: rgba(0, 0, 0, 0.65);
+  --app-media-letterbox: #0f172a;
+  --app-on-media: #ffffff;
+  --app-control-on-dark: rgba(255, 255, 255, 0.14);
+  --app-control-on-dark-hover: rgba(255, 255, 255, 0.28);
+  --app-carousel-nav-bg: rgba(148, 163, 184, 0.55);
+  --app-carousel-nav-fg: #334155;
+  --app-carousel-nav-hover-bg: var(--app-surface);
+  --app-gradient-start: #22df6a;
+  --app-gradient-end: #59cdeb;
+  --app-cursor-block: #2a303c;
+  --app-link-hover: var(--nav-underline);
+  --app-stat-label: var(--app-text-primary);
+  --app-danger: #e11d48;
+  --app-hot-icon: #ea580c;
+  --app-comments-icon: #0891b2;
+
+  --admin-layout-bg: #f1f5f9;
+  --admin-header-bg: #1e293b;
+  --admin-header-text: #f8fafc;
+  --admin-sidebar-bg: #1e293b;
+  --admin-sidebar-border: #e2e8f0;
+  --admin-sidebar-text: #cbd5e1;
+  --admin-sidebar-active: #409eff;
+  --admin-footer-bg: #1e293b;
+  --admin-footer-text: #cbd5e1;
+  --admin-breadcrumb-bg: var(--app-surface);
+  --admin-collapse-hover: #60a5fa;
+
+  --app-tags-bg: #ffffff;
+  --app-tags-border: #d8dce5;
+  --app-tags-item-text: #495060;
+  --app-tags-active-bg: #409eff;
+  --app-tags-active-text: #ffffff;
+  --app-tags-close-hover: var(--app-text-primary);
+  --app-tags-active-dot: #ffffff;
+
+  --app-dialog-bg: var(--app-surface);
+  --app-dialog-muted: var(--app-text-muted);
+  --app-dialog-danger: var(--app-danger);
+
+  --app-message-success-bg: #f0f9eb;
+  --app-message-success-text: #67c23a;
+  --app-message-success-border: #e1f3d8;
+  --app-message-error-bg: #fef0f0;
+  --app-message-error-text: #f56c6c;
+  --app-message-error-border: #fde2e2;
+  --app-message-warning-bg: #fdf6ec;
+  --app-message-warning-text: #e6a23c;
+  --app-message-warning-border: #faecd8;
+  --app-message-info-bg: #f4f4f5;
+  --app-message-info-text: #909399;
+  --app-message-info-border: #e9e9eb;
+
+  --app-code-header-bg: #282c34;
+  --app-code-header-border: #52525b;
+  --app-code-accent: #62ca48;
+  --app-code-text: #f8fafc;
+
+  --app-scrollbar-thumb: rgba(100, 116, 139, 0.35);
+  --app-scrollbar-thumb-hover: rgba(100, 116, 139, 0.55);
+
   --nav-link-color: #333;
   --nav-link-active: #17aa03;
   --nav-underline: #22df6a;
@@ -25,6 +94,55 @@ html.dark {
   --app-text-secondary: #b0c4d6;
   --app-border: #4a5258;
   --app-shadow-soft: rgba(0, 0, 0, 0.35);
+
+  --app-surface: #1a1f26;
+  --app-surface-muted: #141820;
+  --app-text-muted: #94a3b8;
+  --app-divider-subtle: #334155;
+  --app-nav-bg: rgba(16, 20, 24, 0.85);
+  --app-nav-shadow: rgba(0, 0, 0, 0.4);
+  --app-backdrop: rgba(0, 0, 0, 0.58);
+  --app-loading-overlay: rgba(0, 0, 0, 0.72);
+  --app-media-letterbox: #020617;
+  --app-on-media: #f8fafc;
+  --app-control-on-dark: rgba(255, 255, 255, 0.1);
+  --app-control-on-dark-hover: rgba(255, 255, 255, 0.22);
+  --app-carousel-nav-bg: rgba(51, 65, 85, 0.65);
+  --app-carousel-nav-fg: #e2e8f0;
+  --app-carousel-nav-hover-bg: var(--app-surface-muted);
+  --app-gradient-start: #5ee27a;
+  --app-gradient-end: #7dd3fc;
+  --app-cursor-block: #f1f5fb;
+  --app-hot-icon: #fb923c;
+  --app-comments-icon: #22d3ee;
+
+  --admin-layout-bg: #101418;
+  --admin-header-bg: #0f172a;
+  --admin-sidebar-bg: #0f172a;
+  --admin-sidebar-border: #334155;
+  --admin-breadcrumb-bg: var(--app-surface);
+
+  --app-tags-bg: #1a1f26;
+  --app-tags-border: #334155;
+  --app-tags-item-text: #cbd5e1;
+
+  --app-message-success-bg: rgba(34, 197, 94, 0.15);
+  --app-message-success-text: #86efac;
+  --app-message-success-border: rgba(34, 197, 94, 0.35);
+  --app-message-error-bg: rgba(239, 68, 68, 0.12);
+  --app-message-error-text: #fca5a5;
+  --app-message-error-border: rgba(239, 68, 68, 0.35);
+  --app-message-warning-bg: rgba(245, 158, 11, 0.12);
+  --app-message-warning-text: #fcd34d;
+  --app-message-warning-border: rgba(245, 158, 11, 0.35);
+  --app-message-info-bg: rgba(148, 163, 184, 0.12);
+  --app-message-info-text: #cbd5e1;
+  --app-message-info-border: rgba(148, 163, 184, 0.28);
+
+  --app-code-header-bg: #1e2228;
+  --app-code-header-border: #4a5258;
+  --app-code-accent: #6ee7b7;
+  --app-code-text: #e2e8f0;
 
   --nav-link-color: #e2e8f0;
   --nav-link-active: #5ee27a;

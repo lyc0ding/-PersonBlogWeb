@@ -9,12 +9,12 @@
       <div class="statistic" > 
         <div style="margin-right: 15px;">
           <el-statistic :value="studyNum"/> 
-          <p style="color: black;">学习人数</p>
+          <p class="stat-label">学习人数</p>
         </div>
 
         <div style="margin-left: 15px;text-align: center;">
           <el-statistic :value="onlineNum"/>
-          <p style="color: black;">在线人数</p>
+          <p class="stat-label">在线人数</p>
         </div>
       </div>
     </div>
@@ -85,7 +85,7 @@ onMounted(() => {
         font-size: 24px;
         white-space: nowrap; /* 防止文字换行 */
         position: relative;
-        background: linear-gradient(to right, #22df6a, #59cdeb); /* 设置从左到右的线性渐变 */
+        background: linear-gradient(to right, var(--app-gradient-start), var(--app-gradient-end));
         background-clip: text; /* 将背景裁剪到文字区域 */
         -webkit-text-fill-color: transparent; /* 设置文字颜色为透明 */
         margin-top: 50px;
@@ -94,8 +94,12 @@ onMounted(() => {
     .cursor {
         animation: blink 1s infinite;
         margin-left: 3px; /* 光标与文字之间的间距 */
-        background-color: #000;
+        background-color: var(--app-cursor-block);
 
+    }
+
+    .stat-label {
+      color: var(--app-stat-label);
     }
   
     @keyframes blink {

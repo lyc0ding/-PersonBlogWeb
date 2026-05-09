@@ -191,8 +191,8 @@ const navTo = ()=>{
   min-width: 1000px;
   display: flex;
   flex-direction: row;
-  box-shadow: 0 2px 4px 0 rgba(0,0,0,.2);
-  /* background-color: white; */
+  background-color: var(--app-nav-bg);
+  box-shadow: 0 2px 4px 0 var(--app-nav-shadow);
   backdrop-filter: blur(10px); 
   position: fixed;
   top: 0;

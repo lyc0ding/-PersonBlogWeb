@@ -40,7 +40,7 @@ const handleClick = () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: var(--app-loading-overlay);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -50,15 +50,15 @@ const handleClick = () => {
 
 .spinner-container {
   text-align: center;
-  color: white;
+  color: var(--app-on-media);
 }
 
 .spinner {
   width: 50px;
   height: 50px;
-  border: 5px solid rgba(255, 255, 255, 0.3);
+  border: 5px solid color-mix(in srgb, var(--app-on-media) 35%, transparent);
   border-radius: 50%;
-  border-top-color: #fff;
+  border-top-color: var(--app-on-media);
   animation: spin 1s ease-in-out infinite;
   margin: 0 auto 15px;
 }

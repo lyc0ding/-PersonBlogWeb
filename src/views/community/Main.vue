@@ -111,7 +111,7 @@ const calculate = (value) => {
 
 <style scoped>
 .container {
-    background-color: white;
+    background-color: var(--app-bg-primary);
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -130,7 +130,7 @@ const calculate = (value) => {
 
 .notice > .iconfont {
     font-size: 30px;
-    color: rgb(255, 122, 5);
+    color: var(--app-hot-icon);
     /* 添加缩放动画 */
     animation: scaleAnimation 2s infinite ease-in-out;
     /* 确保缩放中心点为图标中心 */
@@ -140,6 +140,7 @@ const calculate = (value) => {
 .title {
     margin-left: 20px;
     font-size: 23px;
+    color: var(--app-text-primary);
 }
 
 /* 喇叭缩放动画关键帧 */
@@ -176,7 +177,7 @@ const calculate = (value) => {
 }
 
 .paragraph:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px var(--app-shadow-soft);
 }
 
 .image{
@@ -226,7 +227,7 @@ const calculate = (value) => {
 
     .iconfont{
         font-size: 15px;
-        color: white;
+        color: var(--app-on-media);
     }
 }
 
@@ -279,7 +280,7 @@ const calculate = (value) => {
 .content-title {
     font-size: 30px;
     margin: 0;
-    color: white;
+    color: var(--app-on-media);
     display: flex;
     align-items: center;
 
@@ -301,23 +302,23 @@ const calculate = (value) => {
     padding: 0 10px 10px;
     flex: 1;
     overflow: auto;
-    color: white;
+    color: var(--app-on-media);
     line-height: 1.6;
 }
 
 .bottom{
     width: 100%;
-    color: white;
+    color: var(--app-on-media);
     display: flex;
     align-items: center;
 
     .iconfont1{
-        color: red;
+        color: var(--app-hot-icon);
         font-size: 20px;
     }
 
     .iconfont2{
-        color: aqua;
+        color: var(--app-comments-icon);
         font-size: 20px;
     }
 }
@@ -335,7 +336,7 @@ const calculate = (value) => {
 .footer{
     width: 100%;
     height: 50px;
-    background-color: pink;
+    background-color: var(--app-surface-muted);
 }
 </style>
     

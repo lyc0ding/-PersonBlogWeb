@@ -123,7 +123,7 @@ const handleResize = () => {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #000;
+  background: var(--app-media-letterbox);
 }
 
 /* 轮播容器 */
@@ -153,7 +153,7 @@ const handleResize = () => {
   transform: translateY(-50%);
   width: 60px;
   height: 60px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--app-control-on-dark);
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -165,7 +165,7 @@ const handleResize = () => {
 }
 
 .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--app-control-on-dark-hover);
   transform: translateY(-50%) scale(1.1);
 }
 
@@ -187,13 +187,13 @@ const handleResize = () => {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
+  background: color-mix(in srgb, var(--app-on-media) 40%, transparent);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .indicators span.active {
-  background: #fff;
+  background: var(--app-on-media);
   transform: scale(1.3);
 }
 </style>

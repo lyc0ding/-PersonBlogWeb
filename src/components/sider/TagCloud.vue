@@ -171,9 +171,14 @@ const query = () => {
     { name: '标签16', url: '#' },{ name: '标签17', url: '#' }
   ];
 
-  tagListOrg.forEach(item => {
-    item.color = '#666';
-  });
+  const muted =
+    typeof document !== 'undefined'
+      ? getComputedStyle(document.documentElement).getPropertyValue('--app-text-muted').trim() ||
+        '#64748b'
+      : '#64748b'
+  tagListOrg.forEach((item) => {
+    item.color = muted
+  })
 
   tagList.value = tagListOrg;
   onReady();
@@ -224,7 +229,7 @@ onUnmounted(() => {
   width: 250px;
   height: 250px;
   position: relative;
-  background: #f9f9f9;
+  background: var(--app-surface-muted);
   cursor: pointer;
 }
 .tagcloud-all a {
@@ -234,7 +239,7 @@ onUnmounted(() => {
   transition: color 0.2s ease;
 }
 .tagcloud-all a:hover {
-  color: #ff4d4f !important;
+  color: var(--app-danger) !important;
   font-weight: bold;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="dept-container">
     <div class="header">
-      <el-button color="#FF8E21" @click="toggleExpandAll" size="small">
+      <el-button type="warning" @click="toggleExpandAll" size="small">
         {{ isExpandAll ? '全部收起' : '全部展开' }}
       </el-button>
       
@@ -305,9 +305,10 @@ onMounted(() => {
 <style scoped>
 .dept-container {
   padding: 20px;
-  background: #fff;
+  background: var(--app-surface);
   border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px 0 var(--app-shadow-soft);
+  color: var(--app-text-primary);
 }
 
 .header {
@@ -326,10 +327,10 @@ onMounted(() => {
 }
 
 :deep(.el-table .el-table__row--level-1) {
-  background-color: #f5f7fa;
+  background-color: var(--app-bg-secondary);
 }
 
 :deep(.el-table .el-table__row--level-2) {
-  background-color: #ffffff;
+  background-color: var(--app-surface);
 }
 </style>

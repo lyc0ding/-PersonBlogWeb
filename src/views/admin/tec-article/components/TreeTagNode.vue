@@ -87,7 +87,7 @@ const handleDelete = () => {
   cursor: pointer;
   margin-right: 4px;
   font-size: 12px;
-  color: #666;
+  color: var(--app-text-muted);
 }
 
 .tag-name {

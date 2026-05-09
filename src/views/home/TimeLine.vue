@@ -139,10 +139,10 @@ onUnmounted(() => {
 }
 
 :deep(.el-timeline-item__timestamp) {
-  color: white !important;          /* 修改为白色字体 */
-  font-size: 18px !important;       /* 增大字体大小 */
-  font-weight: bold !important;     /* 可选：加粗字体 */
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.5); /* 添加文字阴影增强可读性 */
+  color: var(--app-text-primary) !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  text-shadow: 0 0 3px var(--app-shadow-soft);
   margin-bottom: 10px !important;   /* 增加下边距 */
 }
 

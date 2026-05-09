@@ -129,9 +129,9 @@ const handleCommand = (command) => {
 .tags-view-container {
   height: 34px;
   width: 100%;
-  background: #fff;
-  border-bottom: 1px solid #d8dce5;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
+  background: var(--app-tags-bg);
+  border-bottom: 1px solid var(--app-tags-border);
+  box-shadow: 0 1px 3px 0 var(--app-shadow-soft), 0 0 3px 0 var(--app-shadow-soft);
 }
 
 .tags-view-wrapper {
@@ -158,9 +158,9 @@ const handleCommand = (command) => {
   cursor: pointer;
   height: 26px;
   line-height: 26px;
-  border: 1px solid #d8dce5;
-  color: #495060;
-  background: #fff;
+  border: 1px solid var(--app-tags-border);
+  color: var(--app-tags-item-text);
+  background: var(--app-tags-bg);
   padding: 0 8px;
   font-size: 12px;
   margin-left: 5px;
@@ -177,14 +177,14 @@ const handleCommand = (command) => {
 }
 
 .tags-view-item.active {
-  background-color: #409EFF;
-  color: #fff;
-  border-color: #409EFF;
+  background-color: var(--app-tags-active-bg);
+  color: var(--app-tags-active-text);
+  border-color: var(--app-tags-active-bg);
 }
 
 .tags-view-item.active::before {
   content: '';
-  background: #fff;
+  background: var(--app-tags-active-dot);
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -210,7 +210,7 @@ const handleCommand = (command) => {
 }
 
 .tags-view-item .el-icon-close:hover {
-  color: black;
+  color: var(--app-tags-close-hover);
 }
 
 .right-menu {
@@ -218,7 +218,7 @@ const handleCommand = (command) => {
   height: 100%;
   display: flex;
   align-items: center;
-  border-left: 1px solid #d8dce5;
+  border-left: 1px solid var(--app-tags-border);
 }
 
 .dropdown-trigger {

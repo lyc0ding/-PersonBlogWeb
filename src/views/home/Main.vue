@@ -36,7 +36,7 @@ import TimeLine from '@/views/home/TimeLine.vue';
   font-size: 2.2rem;
   font-weight: 700;
   letter-spacing: 1px;
-  color: white;
+  color: var(--app-text-primary);
 }
 
 

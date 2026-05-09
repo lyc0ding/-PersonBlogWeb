@@ -143,7 +143,8 @@ const publishArticle = async () => {
 .article-editor {
   max-width: 800px;
   padding: 20px;
-  background-color: pink;
+  background-color: var(--app-surface-muted);
+  color: var(--app-text-primary);
 }
 
 .overview-editor{
@@ -158,44 +159,50 @@ const publishArticle = async () => {
   width: 100%;
   padding: 12px;
   font-size: 18px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--app-border);
   border-radius: 4px;
   margin-bottom: 15px;
+  background: var(--app-surface);
+  color: var(--app-text-primary);
 }
 
 .btn {
   padding: 8px 16px;
   margin-right: 10px;
-  border: 1px solid #ddd;
-  background: white;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+  color: var(--app-text-primary);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn.primary {
-  background: #007bff;
-  color: white;
-  border-color: #007bff;
+  background: var(--el-color-primary);
+  color: var(--el-color-white);
+  border-color: var(--el-color-primary);
 }
 
 .content-block {
   margin-bottom: 20px;
-  border: 1px solid #eee;
+  border: 1px solid var(--app-divider-subtle);
   border-radius: 4px;
   padding: 15px;
+  background: var(--app-surface);
 }
 
 .text-area {
   width: 100%;
   min-height: 120px;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--app-border);
   border-radius: 4px;
   resize: vertical;
+  background: var(--app-surface);
+  color: var(--app-text-primary);
 }
 
 .image-upload {
-  border: 2px dashed #ddd;
+  border: 2px dashed var(--app-border);
   padding: 40px;
   text-align: center;
   cursor: pointer;
@@ -213,8 +220,8 @@ const publishArticle = async () => {
 }
 
 .remove-btn {
-  background: #dc3545;
-  color: white;
+  background: var(--app-danger);
+  color: var(--app-on-media);
   border: none;
   padding: 5px 10px;
   border-radius: 4px;

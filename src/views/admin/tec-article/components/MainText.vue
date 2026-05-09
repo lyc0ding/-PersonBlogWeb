@@ -2,8 +2,8 @@
   <div class="editor">
     <!-- 工具栏 -->
     <div class="toolbar" >
-      <el-button color="#4f4f4f" plain @click="addParagraph" size="large">添加段落</el-button>
-      <el-button color="#4f4f4f" plain @click="addImage" size="large">添加图片</el-button>
+      <el-button plain @click="addParagraph" size="large">添加段落</el-button>
+      <el-button plain @click="addImage" size="large">添加图片</el-button>
     </div>
 
     <!-- 编辑区域 -->
@@ -43,8 +43,8 @@
 
         <!-- 操作按钮 -->
         <div class="actions" style="margin-top: 10px;">
-          <el-button color="#f48e4e" @click="moveUp(index)" :disabled="index === 0">上移</el-button>
-          <el-button color="#f48e4e" @click="moveDown(index)" :disabled="index === content.length - 1">下移</el-button>
+          <el-button type="warning" @click="moveUp(index)" :disabled="index === 0">上移</el-button>
+          <el-button type="warning" @click="moveDown(index)" :disabled="index === content.length - 1">下移</el-button>
           <el-button type="danger" @click="removeItem(index)">删除</el-button>
         </div>
       </div>
@@ -149,13 +149,14 @@ defineExpose({save})
   margin: 0 auto;
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  background-color: white;
+  box-shadow: 0 1px 4px var(--app-shadow-soft);
+  background-color: var(--app-surface);
+  color: var(--app-text-primary);
 }
 
 .toolbar {
   margin-bottom: 20px;
-  color: black;
+  color: var(--app-text-primary);
 }
 
 .content {
@@ -165,12 +166,12 @@ defineExpose({save})
 .item {
   margin-bottom: 20px;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--app-border);
 }
 
 .paragraph .el-input {
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--app-border);
 }
 
 .image input[type="file"] {
@@ -184,6 +185,6 @@ defineExpose({save})
 
 .preview {
   padding: 20px;
-  border-top: 2px solid #ccc;
+  border-top: 2px solid var(--app-divider-subtle);
 }
 </style>

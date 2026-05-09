@@ -49,7 +49,8 @@ const formLabelAlign = ref({
 
 <style scoped>
 .overview-container{
-    background-color: white;
+    background-color: var(--app-surface);
+    color: var(--app-text-primary);
     width: 800px;
     height: 500px;
     margin: 0 auto;

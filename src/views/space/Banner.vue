@@ -31,7 +31,7 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        background-color: rgba(255, 255, 255, 0.3); /* 半透明白色背景 */
+        background-color: color-mix(in srgb, var(--app-surface) 42%, transparent);
         backdrop-filter: blur(10px);                /* 背景模糊强度 */
         -webkit-backdrop-filter: blur(10px);        /* 兼容Safari */
         border-radius: 10px;

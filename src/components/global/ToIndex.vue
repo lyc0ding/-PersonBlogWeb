@@ -27,8 +27,13 @@ const toIndex = ()=>{
     }
 }
 
+#container p {
+  color: var(--app-text-secondary);
+  transition: color 0.2s ease;
+}
+
 p:hover{
-    color: rgb(0, 0, 0);
+    color: var(--app-text-primary);
     user-select: none;
 }
 </style>

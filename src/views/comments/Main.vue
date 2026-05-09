@@ -47,12 +47,12 @@
                 <el-avatar size="large"> {{ message.nickname }} </el-avatar>
               </div>
               <div class="middle" style="width: 80%;height: 100%;padding: 0px 10px;display: flex;flex-direction: column;gap: 10px;">
-                <div class="nickname" style="color: grey;">{{ message.nickname }}</div>
-                <div class="content" style="font-size: 20px;color: gray;">{{ message.content }}</div>
-                <div class="ip" style="padding: 0 20px;color: grey;user-select: none;">
+                <div class="nickname msg-muted">{{ message.nickname }}</div>
+                <div class="content msg-body">{{ message.content }}</div>
+                <div class="ip msg-ip">
                   <i class="iconfont icon-xiazai19"></i>
                   {{ message.ip }}
-                  <span style="margin-left: 30px;font-size: 15px;color: black;">回复</span>
+                  <span class="reply-action">回复</span>
                 </div>
               </div>
               <div class="right" style="flex: 1;text-align: end;padding: 20px 30px;">
@@ -85,16 +85,16 @@
                 </el-avatar>
               </div>
               <div class="middle" style="width: 80%;height: 100%;padding: 0px 10px;display: flex;flex-direction: column;gap: 10px;">
-                <div class="nickname" style="color: grey;">
+                <div class="nickname msg-muted">
                   {{ reply.nickname }}
                   <i class="iconfont icon-tubiaozhizuo-"/>
                   {{ reply.target }}
                 </div>
-                <div class="content" style="font-size: 20px;color: gray;">{{ reply.content }}</div>
-                <div class="ip" style="padding: 0 20px;color: grey;user-select: none;">
+                <div class="content msg-body">{{ reply.content }}</div>
+                <div class="ip msg-ip">
                   <i class="iconfont icon-xiazai19"></i>
                   {{ reply.ip }}
-                  <span style="margin-left: 30px;font-size: 15px;color: black;">回复</span>
+                  <span class="reply-action">回复</span>
                 </div>
               </div>
               <div class="right" style="flex: 1;text-align: end;padding: 20px 30px;">
@@ -197,6 +197,27 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.reply-action {
+  margin-left: 30px;
+  font-size: 15px;
+  color: var(--app-text-primary);
+}
+
+.msg-muted {
+  color: var(--app-text-muted);
+}
+
+.msg-body {
+  font-size: 20px;
+  color: var(--app-text-secondary);
+}
+
+.msg-ip {
+  padding: 0 20px;
+  color: var(--app-text-muted);
+  user-select: none;
+}
+
 .container{ 
   display: flex;
   gap: 10px;
@@ -208,7 +229,7 @@ onMounted(() => {
 
 .guestbook{
   width: 100%;
-  background-color: white;
+  background-color: var(--app-surface);
   padding: 10px 0;
   display: flex;
   flex-direction: column;
@@ -245,7 +266,7 @@ onMounted(() => {
       .input-with-text{
         width: 100%;
         border:none;
-        box-shadow: 10px 0px 5px 0px rgba(0, 0, 0, 0.5), -10px 0px 5px 0px rgba(0, 0, 0, 0.5);
+        box-shadow: 10px 0px 5px 0px var(--app-shadow-soft), -10px 0px 5px 0px var(--app-shadow-soft);
         padding: 10px 20px;
         /* 固定高度 */
         height: 150px;
@@ -269,8 +290,8 @@ onMounted(() => {
         & > input{
           outline: none;
           flex: 1;
-          border: grey 1px dashed;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.15);
+          border: var(--app-border) 1px dashed;
+          box-shadow: 0 2px 4px var(--app-shadow-soft), 0 4px 8px var(--app-shadow-soft);
           
           background-repeat: no-repeat;
           background-size: 20px;
@@ -309,7 +330,7 @@ onMounted(() => {
 .latest-guestbook{
   width: 100%;
   margin-top: 10px;
-  background-color: white;
+  background-color: var(--app-surface);
   padding: 10px 0;
   display: flex;
   flex-direction: column;
@@ -329,7 +350,7 @@ onMounted(() => {
       padding: 10px 20px;
       display: flex;
       flex-direction: column;
-      box-shadow: 10px 10px 20px 0 rgba(0, 0, 0, 0.1);
+      box-shadow: 10px 10px 20px 0 var(--app-shadow-soft);
     }
   }
 }

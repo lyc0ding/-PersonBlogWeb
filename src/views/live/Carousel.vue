@@ -183,7 +183,7 @@ onUnmounted(() => {
   height: 100vh;
   margin: 0 auto;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--app-shadow-soft);
   /* 鼠标在中间区域时显示可滚动提示，两侧区域恢复默认 */
   cursor: grab;
 }
@@ -216,7 +216,7 @@ onUnmounted(() => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(147, 146, 146, 0.7);
+  background-color: var(--app-carousel-nav-bg);
   border: none;
   width: 48px;
   height: 48px;
@@ -228,18 +228,18 @@ onUnmounted(() => {
   transition: all 0.3s ease;
   z-index: 10;
   font-size: 18px;
-  color: #333;
+  color: var(--app-carousel-nav-fg);
 
   & > .iconfont{
         font-size: 25px;
         font-weight: 1000;
-        color: rgb(58, 59, 59);
+        color: var(--app-carousel-nav-fg);
     }
 }
 
 .nav-btn:hover {
-    background-color: rgb(255, 255, 255);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background-color: var(--app-carousel-nav-hover-bg);
+    box-shadow: 0 2px 8px var(--app-shadow-soft);
 }
 
 .prev-btn {
@@ -267,13 +267,13 @@ onUnmounted(() => {
   border-radius: 50%;
   border: none;
   user-select: none;
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: color-mix(in srgb, var(--app-on-media) 50%, transparent);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .indicator.active {
-  background-color: white;
+  background-color: var(--app-on-media);
   width: 28px;
   border-radius: 5px;
 }
