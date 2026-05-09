@@ -1,0 +1,16 @@
+// 全局样式配置
+
+html,
+body,
+#app {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* 全局样式设置（主题色见 theme.scss 中的 CSS 变量） */
+body {
+    color: var(--app-text-primary);
+    background-color: var(--app-bg-primary);
+}

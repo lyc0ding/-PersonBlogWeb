@@ -1,0 +1,45 @@
+// 与 variables.scss 配色对齐，供运行时主题切换（html.dark）
+
+:root {
+  --app-bg-primary: #f3f4f6;
+  --app-bg-secondary: #e0e7ee;
+  --app-text-primary: #2a303c;
+  --app-text-secondary: #4a5568;
+  --app-border: #b0c4d6;
+  --app-shadow-soft: rgba(0, 0, 0, 0.12);
+
+  --nav-link-color: #333;
+  --nav-link-active: #17aa03;
+  --nav-underline: #22df6a;
+  --nav-dropdown-bg: #ffffff;
+  --nav-dropdown-text: #606266;
+  --nav-dropdown-hover-bg: #ecf5ff;
+  --nav-dropdown-hover-text: #22df6a;
+  --nav-trigger-hover: #17aa03;
+}
+
+html.dark {
+  --app-bg-primary: #101418;
+  --app-bg-secondary: #15191d;
+  --app-text-primary: #f1f5fb;
+  --app-text-secondary: #b0c4d6;
+  --app-border: #4a5258;
+  --app-shadow-soft: rgba(0, 0, 0, 0.35);
+
+  --nav-link-color: #e2e8f0;
+  --nav-link-active: #5ee27a;
+  --nav-underline: #5ee27a;
+  --nav-dropdown-bg: #1e2226;
+  --nav-dropdown-text: #e2e8f0;
+  --nav-dropdown-hover-bg: #2d3a40;
+  --nav-dropdown-hover-text: #7dffb0;
+  --nav-trigger-hover: #7dffb0;
+}
+
+html,
+body,
+#app {
+  background-color: var(--app-bg-primary);
+  color: var(--app-text-primary);
+  transition: background-color 0.25s ease, color 0.2s ease;
+}
