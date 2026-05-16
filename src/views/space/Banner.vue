@@ -1,50 +1,47 @@
 <template>
-    <div id="container">
-        <div class="title">
-            <div class="title-contents">
-                <h2>碎碎念</h2>
-                <p><i class='iconfont icon-yinhao'/>&nbsp;&nbsp;已在本站留下了n条小吐槽</p>
-            </div>
-        </div>
+  <div class="page-banner">
+    <div class="page-banner-inner">
+      <h1 class="page-title">说说</h1>
+      <p class="page-sub">已在本站留下了若干条小吐槽</p>
     </div>
+  </div>
 </template>
 
 <script setup>
-
 </script>
 
 <style scoped>
-#container {
+.page-banner {
   width: 100%;
-  height: 100%;
-  min-width: 1500px;
+  max-width: var(--blog-content-max, 960px);
+  margin: 0 auto;
+  padding: 20px 16px 0;
+}
 
-  .title{
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    padding-top: 50px;
-    .title-contents{
-        width: 85%;
-        height: 150px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        background-color: color-mix(in srgb, var(--app-surface) 42%, transparent);
-        backdrop-filter: blur(10px);                /* 背景模糊强度 */
-        -webkit-backdrop-filter: blur(10px);        /* 兼容Safari */
-        border-radius: 10px;
-        h2{
-            font-size: 35px;
-        }
-        p{
-            font-size: 20px;
-            display: flex;
-            flex-direction: row;
-            justify-content: center;;
-        }
-    }
-  }
+.page-banner-inner {
+  text-align: center;
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--blog-divider);
+}
+
+.page-title {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--app-text-primary);
+}
+
+.page-sub {
+  margin: 0;
+  font-size: 14px;
+  color: var(--app-text-muted);
+}
+
+.page-sub::before {
+  content: '「';
+}
+
+.page-sub::after {
+  content: '」';
 }
 </style>

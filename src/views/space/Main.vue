@@ -1,55 +1,73 @@
 <template>
   <div id="container">
-
     <ImagePreviewer
       :show-preview="showImagePreview"
       :current-image="currentPreviewImage"
-      @close="closeImagePreview">
-    </ImagePreviewer>
+      @close="closeImagePreview"
+    />
 
     <div class="main">
       <div class="contents">
-        <div class="paragraph" v-for="(item, index) in 3" :key="index" ref="paragraphs">
-          <div class="paragraph-inner" :class="{ 'expanded': expandedStates[index] }">
-            <div class="paragraph-head">
-              <div class="paragraph-head-left">
-                <h2>呜呜呜~今天有点倒霉</h2>
-              </div>
-              <div class="paragraph-head-right">
-                <i class="iconfont icon-rili">&nbsp;&nbsp;7 月 24 日, 2025年&nbsp;&nbsp;|&nbsp;&nbsp;</i>
-                <i class="iconfont icon-clock">&nbsp;&nbsp;10:24:65</i>
-              </div>
+        <article
+          v-for="(item, index) in paragraphs"
+          :key="index"
+          ref="paragraphRefs"
+          class="shuoshuo-card"
+        >
+          <p class="post-kind">说说</p>
+          <div class="card-head">
+            <h2 class="card-title">{{ item.title }}</h2>
+            <div class="card-date">
+              <span>{{ item.date }}</span>
             </div>
-            <div class="paragraph-content">
-              <img :src=img1 @click="openImagePreview(img1)">
-              <img :src=img2 @click="openImagePreview(img2)">
-              <p>今天真是倒霉透了！先是早上闹钟没响，起床就晚了一个小时。匆忙中又打翻了咖啡，把新买的衬衫弄脏了。</p>
-            </div>
+          </div>
 
-            <div class="paragraph-bottom">
-                <i class="iconfont iconfont1 icon-hot"/>&nbsp;3.7k热度&nbsp;&nbsp;
-                <i class="iconfont iconfont2 icon-comments"/>&nbsp;45留言
+          <div
+            class="card-body"
+            :class="{ expanded: expandedStates[index] }"
+          >
+            <div class="card-inner">
+              <div class="media" v-if="item.images?.length">
+                <img
+                  v-for="(src, i) in item.images"
+                  :key="i"
+                  :src="src"
+                  alt=""
+                  @click="openImagePreview(src)"
+                >
+              </div>
+              <p>{{ item.text }}</p>
             </div>
           </div>
-          <div class="show-more" v-if="showMoreStates[index] || expandedStates[index]" 
-               @click="toggleParagraph(index)">
-               <i class="iconfont" :class="[expandedStates[index] ? ' icon-xiangshangjiantou' : 'icon-xiangxiajiantou']"></i>
-            {{ expandedStates[index] ? '收起内容' : '展示更多' }}
+
+          <div class="card-foot">
+            <span><i class="iconfont icon-hot" /> {{ item.hot }}</span>
+            <span><i class="iconfont icon-comments" /> {{ item.comments }} 留言</span>
           </div>
-        </div>
+
+          <button
+            v-if="showMoreStates[index]"
+            type="button"
+            class="toggle-more"
+            @click="toggleParagraph(index)"
+          >
+            <i class="iconfont" :class="expandedStates[index] ? 'icon-xiangshangjiantou' : 'icon-xiangxiajiantou'" />
+            {{ expandedStates[index] ? '收起内容' : '展示更多' }}
+          </button>
+        </article>
       </div>
 
-      <!-- 右侧个人信息展示组件 -->
-      <PersonBox></PersonBox> 
+      <aside class="side">
+        <PersonBox />
+      </aside>
     </div>
 
-    <!-- 消息展示组件 -->
-    <MessageVue 
-      ref="toastMessage" 
-      position="right" 
+    <MessageVue
+      ref="toastMessage"
+      position="right"
       :duration="2000"
-      content="点赞成功">
-    </MessageVue>
+      content="点赞成功"
+    />
   </div>
 </template>
 
@@ -59,186 +77,189 @@ import PersonBox from '../../components/sider/Introduction.vue'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import MessageVue from '@/components/Message/Index.vue'
 
-// 用于存储每个段落的展开状态
-const expandedStates = ref(Array(10).fill(false));
-// 用于记录哪些段落需要显示"展示更多"按钮
-const showMoreStates = ref(Array(10).fill(false));
-// 获取段落元素的引用
-const paragraphs = ref([]);
+const paragraphs = ref([
+  {
+    title: '呜呜呜~今天有点倒霉',
+    date: '2025 年 7 月 24 日 · 10:24',
+    text: '今天真是倒霉透了！先是早上闹钟没响，起床就晚了一个小时。匆忙中又打翻了咖啡，把新买的衬衫弄脏了。',
+    images: ['/img/bac1.jpg', '/img/bac2.jpg'],
+    hot: '3.7k 热度',
+    comments: 45,
+  },
+  {
+    title: '诈尸一下',
+    date: '2025 年 12 月 11 日 · 21:53',
+    text: '马上就是 2026 年了，哈哈哈。过得太快了吧。',
+    images: [],
+    hot: '1.2k 热度',
+    comments: 13,
+  },
+])
 
-// 添加 Message 的引用
+const expandedStates = ref(paragraphs.value.map(() => false))
+const showMoreStates = ref(paragraphs.value.map(() => false))
+const paragraphRefs = ref([])
+
 const toastMessage = ref(null)
 
-const img1 = ref('/img/bac1.jpg')
-const img2 = ref('/img/bac2.jpg')
-
-// 挂载后检查哪些段落需要显示"展示更多"按钮
 onMounted(() => {
   setTimeout(() => {
-    showMoreStates.value = paragraphs.value.map(paragraph => {
-      const inner = paragraph.querySelector('.paragraph-inner');
-      return inner && inner.scrollHeight > 500;
-    });
-  }, 100);
-});
+    showMoreStates.value = paragraphRefs.value.map((el) => {
+      if (!el) return false
+      const inner = el.querySelector?.('.card-inner')
+      return inner && inner.scrollHeight > 320
+    })
+  }, 120)
+})
 
-// 切换段落的展开状态
 const toggleParagraph = (index) => {
-  expandedStates.value[index] = !expandedStates.value[index];
-};
-
-// 处理点赞点击
-const handleLike = () => {
-   // 手动触发消息显示
-  toastMessage.value.show();
+  expandedStates.value[index] = !expandedStates.value[index]
 }
 
-// 添加图片预览状态
-const showImagePreview = ref(false);
-const currentPreviewImage = ref('');
+const showImagePreview = ref(false)
+const currentPreviewImage = ref('')
 
-// 打开图片预览
 const openImagePreview = (imgSrc) => {
-  currentPreviewImage.value = imgSrc;
-  showImagePreview.value = true;
-};
+  currentPreviewImage.value = imgSrc
+  showImagePreview.value = true
+}
 
-// 关闭图片预览
 const closeImagePreview = () => {
-  showImagePreview.value = false;
-};
+  showImagePreview.value = false
+}
 </script>
 
 <style scoped>
-#container{
+#container {
   width: 100%;
-  margin-top: 50px;
+  max-width: var(--blog-content-max, 960px);
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+}
+
+.main {
   display: flex;
-  justify-content: center;
-  min-width: 1500px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 28px;
+}
 
-  .main{
-    width: 85%;
-    display: flex;
-    gap: 10px;
-    flex-direction: row;
+.contents {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 
-    .contents{
-      flex:1;
-      display: flex;
-      flex-direction: column; /* 垂直排列 */
-      gap: 10px; /* 子元素间统一间距 */
+.side {
+  flex: 0 0 250px;
+  width: 250px;
+}
 
-      .paragraph{
-        width: 100%;
-        /* border-radius: 15px; */
-        background-color: var(--app-surface);
-        color: var(--app-text-primary);
-        position: relative;
-        box-shadow: 0 4px 12px var(--app-shadow-soft);
-        transition: all 0.3s ease;
-        
-        .paragraph-inner {
-          max-height: 500px;
-          overflow: hidden;
-          transition: max-height 0.5s ease;
-        }
-        
-        .paragraph-inner.expanded {
-          max-height: 2000px; /* 足够大的值容纳内容 */
-        }
+.shuoshuo-card {
+  padding: 22px 0 24px;
+  border-bottom: 1px solid var(--blog-divider);
+}
 
-        .paragraph-head{
-          width: 100%;  
-          display: flex;
-          border-radius: 15px 15px 0 0 ;
-          padding: 10px 25px 0 25px;
-          background-color: var(--app-surface-muted);
-          border-bottom: 1px solid var(--app-divider-subtle);
+.post-kind {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--blog-meta);
+  letter-spacing: 0.08em;
+}
 
-          .paragraph-head-left{
-            width: 50%;
-            height: 100%;
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
 
-            h2 {
-              font-size: 20px;
-              margin: 15px 0 10px;
-              color: var(--app-text-primary);
-              font-weight: 600;
-            }
-          }
+.card-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--app-text-primary);
+}
 
-          .paragraph-head-right{
-            width: 50%;
-            height: 100%;
-            padding: 10px;
-            text-align: right;
-            color: var(--app-text-secondary);
-            font-size: 14px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-          }
+.card-date {
+  font-size: 13px;
+  color: var(--blog-meta);
+  white-space: nowrap;
+}
 
-        }
-        .paragraph-content{
-          width: 100%;
-          padding: 20px;
-          
-          p {
-            font-size: 16px;
-            line-height: 1.8;
-            color: var(--app-text-secondary);
-            margin: 0 0 15px 0;
-          }
+.card-body {
+  max-height: 320px;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
 
-          img{
-            margin-top: 10px;
-            width: 70%;
-            height: auto; 
-            display: block; 
-            border-radius: 8px;
-            box-shadow: 0 2px 8px var(--app-shadow-soft);
-          }
+.card-body.expanded {
+  max-height: 2000px;
+}
 
-          img + img {
-            margin-top: 20px;
-          }
-        }
-        .paragraph-bottom{
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: end;
-          padding: 15px 20px;
-          user-select: none;
+.card-inner p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--app-text-secondary);
+}
 
-          .iconfont1{
-              color: var(--app-hot-icon);
-              font-size: 20px;
-          }
+.media {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
 
-          .iconfont2{
-              color: var(--app-comments-icon);
-              font-size: 20px;
-          }
-        }
-      }
-      
-      .show-more {
-        width: 200px;
-        padding: 8px 12px;
-        text-align: center;
-        color: var(--app-text-primary);
-        border-radius: 4px;
-        cursor: pointer;
-        margin: 15px auto;
-        font-size: 14px;
-        transition: all 0.3s;
-        position: relative;
-        box-shadow: 0 2px 5px var(--app-shadow-soft);
-      }
-    }
+.media img {
+  max-width: 100%;
+  border-radius: 2px;
+  cursor: zoom-in;
+  border: 1px solid var(--blog-card-border);
+}
+
+.card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--blog-meta);
+}
+
+.card-foot .iconfont {
+  margin-right: 4px;
+  font-size: 15px;
+}
+
+.toggle-more {
+  display: block;
+  margin: 14px auto 0;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--blog-link);
+  background: transparent;
+  border: 1px solid var(--blog-divider);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.toggle-more:hover {
+  border-color: var(--blog-link);
+  background: var(--blog-nav-link-hover-bg);
+}
+
+@media (max-width: 900px) {
+  .main {
+    flex-direction: column;
+  }
+
+  .side {
+    width: 100%;
+    flex: none;
   }
 }
-</style> 
+</style>

@@ -1,125 +1,59 @@
 <template>
-  <div id="live-container" @wheel="handleWheel" :class="{'no-scroll': isAnimating}">
-    <ToIndex/>
-    
-    <!-- 走马灯banner区域 -->
-    <div class="banner-carousel">
-      <Carousel></Carousel>
-    </div>
-    
-    <!-- 内容区域 - 将覆盖在banner上方滚动 -->
-    <div class="live-container-content">
-      <div class="aboutme-container">
-        <div class="aboutme-tile">
-          <h1>关于我</h1>
-          <h2>About Me</h2>
-        </div>
-
-        <el-divider border-style="dashed" class="theme-divider"/>
-
-        <div class="aboutme-content">
-          <!-- 这里可以添加关于我的具体内容 -->
-          <p>这里是关于我的详细介绍内容...</p>
-          <p>更多关于我的信息...</p>
-        </div>
-      </div>
-      
-      <!-- 可以添加更多内容区块，它们都会滚动覆盖banner -->
-      <div class="other-section">
-        <h2>其他内容区域</h2>
-        <p>这是另一个内容区块，会随着滚动继续覆盖banner</p>
-      </div>
+  <div class="blog-page">
+    <div class="blog-inner">
+      <header class="page-head">
+        <h1 class="page-title">关于我</h1>
+        <p class="page-sub">About Me</p>
+      </header>
+      <article class="prose">
+        <p>这里是关于我的详细介绍内容，可替换为个人经历、项目与联系方式等。</p>
+        <p>原先全屏走马灯与滚动覆盖效果已改为与全站一致的文档式阅读体验，更符合博客类站点交互。</p>
+      </article>
     </div>
   </div>
 </template>
 
 <script setup>
-import ToIndex from '@/components/global/ToIndex.vue';
-import Carousel from './Carousel.vue';
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-
-
-
 </script>
 
 <style scoped>
-#live-container {
-  position: relative;
-  width: 100%;
-  overflow-x: hidden;
+.blog-page {
+  max-width: var(--blog-content-max, 960px);
+  margin: 0 auto;
+  padding: 24px 16px 48px;
 }
 
-/* 走马灯banner样式 */
-.banner-carousel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100vh;
+.page-head {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--blog-divider);
+  text-align: center;
 }
 
-/* 内容区域样式 - 会滚动覆盖在banner上方 */
-.live-container-content{
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
   color: var(--app-text-primary);
-  z-index: 10;
-  position: relative;
-  margin-top: 100vh;
-  background-color: var(--app-bg-primary);
-  min-height: 100vh;
+  margin: 0 0 6px;
+  letter-spacing: 0.12em;
 }
 
-.aboutme-container{
-  width: 90%; 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.page-sub {
+  margin: 0;
+  font-size: 14px;
+  color: var(--app-text-muted);
+  letter-spacing: 0.2em;
 }
 
-.aboutme-tile{
-  width: 100%;
-  padding: 10px 0px;
-  text-align: center;
-  
-  h1, h2 {
-    letter-spacing: 10px;
-    margin: 10px 0;
-  }
-}
-
-.aboutme-content {
-  margin-top: 30px;
-  font-size: 18px;
-  line-height: 1.8;
-  max-width: 800px;
-  text-align: center;
-}
-
-/* 其他内容区块样式 */
-.other-section {
-  width: 90%;
-  max-width: 800px;
-  margin-top: 100px;
-  padding: 50px;
-  text-align: center;
-  background-color: var(--app-surface-muted);
-  border-radius: 8px;
-}
-
-.theme-divider :deep(.el-divider__text) {
+.prose {
+  font-size: 15px;
+  line-height: 1.85;
   color: var(--app-text-secondary);
+  max-width: 640px;
+  margin: 0 auto;
 }
 
-.theme-divider.el-divider--horizontal {
-  border-top-color: var(--app-border);
-}
-
-/* 禁止滚动的类 */
-.no-scroll {
-  overflow: hidden;
+.prose p {
+  margin: 0 0 1em;
 }
 </style>

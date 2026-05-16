@@ -50,7 +50,8 @@ import ToolsBtn from '@/components/global/ToolsBtn.vue';
     }
 
     main{
-        margin-top: 100px;
+        margin-top: var(--blog-header-height, 118px);
         position: relative;
+        min-height: calc(100vh - var(--blog-header-height, 118px));
     }
 </style>

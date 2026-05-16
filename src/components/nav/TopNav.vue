@@ -1,130 +1,93 @@
 <template>
-  <div id="nav-container" :class="{ hidden: !isHeaderVisible }">
-    <div class="nav-left">
-      <img src="/logo.png">
-    </div>
-        
-    <div class="nav-right">
-      <div class="nav-item">
-        <!-- 新增导航栏选项 -->
-        <div class="nav-links">
-          <a 
-            v-for="(item, index) in navItems" 
-            :key="index"
-            :class="{ active: activeIndex === index }"
-            @click="setActive(item.path,index)"
-          >
-            <i class='iconfont' :class="item.icon"/>&nbsp;{{ item.label }}
-          </a>
-        </div>
+  <div id="nav-container">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <router-link to="/" class="site-name" @click="blurTarget">Echo</router-link>
+        <p class="site-tagline">Life is code. I will debug it.</p>
       </div>
 
-      <button
-        type="button"
-        class="theme-toggle"
-        :title="themeStore.isDark ? '切换为浅色' : '切换为深色'"
-        :aria-label="themeStore.isDark ? '切换为浅色模式' : '切换为深色模式'"
-        @click="themeStore.toggle()"
-      >
-        <i class="iconfont" :class="themeStore.isDark ? 'icon-wanshang' : 'icon-qingbaitian'" />
-      </button>
+      <div class="nav-toolbar">
+        <form class="search" role="search" @submit.prevent="onSearch">
+          <label class="sr-only" for="global-search">搜索关键字</label>
+          <input
+            id="global-search"
+            v-model.trim="keyword"
+            type="search"
+            class="search-input"
+            placeholder="搜索关键字"
+            autocomplete="off"
+          />
+          <button type="submit" class="search-btn">搜索</button>
+        </form>
 
-      <div class="dropdown-wrapper" @mouseover="showDropdown" @mouseleave="hideDropdown">
-        <i class="iconfont icon-gengduo dropdown-trigger"></i>
-        <transition name="fade">
-          <ul v-show="isDropdownVisible" class="dropdown-menu">
-            <li @click="handleMenuClick('个人信息')">个人信息</li>
-            <li @click="navTo">后台管理</li>
-            <li @click="handleMenuClick('主题')">设置</li>
-            <li @click="handleMenuClick('退出')">退出</li>
-          </ul>
-        </transition>
+        <nav class="nav-links" aria-label="主导航">
+          <router-link
+            v-for="item in navItems"
+            :key="item.path"
+            :to="item.path"
+            class="nav-link"
+            active-class="active"
+            exact-active-class="active"
+          >
+            {{ item.label }}
+          </router-link>
+        </nav>
+      </div>
+
+      <div class="nav-actions">
+        <button
+          type="button"
+          class="theme-toggle"
+          :title="themeStore.isDark ? '切换为浅色' : '切换为深色'"
+          :aria-label="themeStore.isDark ? '切换为浅色模式' : '切换为深色模式'"
+          @click="themeStore.toggle()"
+        >
+          <i class="iconfont" :class="themeStore.isDark ? 'icon-wanshang' : 'icon-qingbaitian'" />
+        </button>
+
+        <div class="dropdown-wrapper" @mouseenter="showDropdown" @mouseleave="hideDropdown">
+          <i class="iconfont icon-gengduo dropdown-trigger" aria-hidden="true" />
+          <transition name="fade">
+            <ul v-show="isDropdownVisible" class="dropdown-menu">
+              <li @click="handleMenuClick('个人信息')">个人信息</li>
+              <li @click="navTo">后台管理</li>
+              <li @click="handleMenuClick('主题')">设置</li>
+              <li @click="handleMenuClick('退出')">退出</li>
+            </ul>
+          </transition>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-// 引入Pinia存储
-import { useNavStore } from '@/stores/navStore';
-import { useThemeStore } from '@/stores/themeStore';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useThemeStore } from '@/stores/themeStore'
 
 const router = useRouter()
 const themeStore = useThemeStore()
-const route = useRoute()
-// 创建存储实例
-const navStore = useNavStore()
 
-// 导航栏常用选项
-const navItems = ref([
-  {
-    label:'首页',
-    path:'/',
-    icon:'icon-ai-home'
-  },
-  {
-    label:'碎碎念',
-    path:'/space',
-    icon:'icon-shuohuaren'
-  },
-  {
-    label:'技术社区',
-    path:'/technolyge',
-    icon:'icon-jishufuwu'
-  },
-  {
-    label:'作者生活',
-    path:'/live',
-    icon:'icon-icon'
-  },
-  {
-    label:'留言板',
-    path:'/comments',
-    icon:'icon-xiaoxi'
-  }
-]);
+const navItems = [
+  { label: '首页', path: '/' },
+  { label: '说说', path: '/space' },
+  { label: '文章', path: '/technolyge' },
+  { label: '留言板', path: '/comments' },
+  { label: '友链', path: '/links' },
+  { label: '关于', path: '/about' },
+]
 
-// 使用computed从Pinia中获取激活索引，处理null值的边界情况
-const activeIndex = computed({
-  get() {
-    // 如果Pinia中的值为null，返回-1（表示无激活项），否则返回存储的索引
-    return navStore.activeNavIndex ?? -1
-  },
-  set(value) {
-    navStore.setActiveNavIndex(value)
-  }
-})
+const keyword = ref('')
+const isDropdownVisible = ref(false)
 
-// 导航栏点击事件
-const setActive = (path, index) => {
-  router.push(path)
-  activeIndex.value = index
-};
+const blurTarget = (e) => {
+  e?.currentTarget?.blur?.()
+}
 
-const isHeaderVisible = ref(true) // 控制导航栏的显示/隐藏
-let lastScrollTop = 0 // 上一次滚动的位置
-const isDropdownVisible = ref(false) // 控制下拉菜单的显示
-
-const handleScroll = () => {
-  const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop
-  
-  // 在页面顶部时始终显示导航栏
-  if (currentScrollTop === 0) {
-    isHeaderVisible.value = true
-  } 
-  // 向下滚动超过50px时隐藏导航栏
-  else if (currentScrollTop > lastScrollTop && currentScrollTop > 50) {
-    isHeaderVisible.value = false
-    isDropdownVisible.value = false // 滚动时隐藏下拉菜单
-  } 
-  // 向上滚动时显示导航栏
-  else if (currentScrollTop < lastScrollTop) {
-    isHeaderVisible.value = true
-  }
-  
-  lastScrollTop = currentScrollTop
+const onSearch = () => {
+  if (!keyword.value) return
+  router.push({ path: '/technolyge', query: { q: keyword.value } })
 }
 
 const showDropdown = () => {
@@ -138,146 +101,178 @@ const hideDropdown = () => {
 const handleMenuClick = (item) => {
   console.log(`选择了: ${item}`)
   isDropdownVisible.value = false
-  // 这里可以添加菜单项点击后的具体逻辑
 }
 
-// 页面初始化时，根据当前路由设置激活索引
-const initActiveIndex = () => {
-  const currentPath = route.path
-  // 1. 先检查Pinia中是否有已保存的激活索引
-  if (navStore.activeNavIndex !== null) {
-    // Pinia中有值，直接使用（不修改）
-    return
-  }
-  
-  // 2. Pinia中无值，查找当前路由对应的索引
-  const findIndex = navItems.value.findIndex(item => item.path === currentPath)
-  
-  // 3. 如果找到匹配的路由索引，设置为激活状态
-  if (findIndex !== -1) {
-    activeIndex.value = findIndex
-  } else {
-    // 4. 路由也匹配不到，才默认激活首页（索引0）
-    activeIndex.value = 0
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
-  // 初始化激活索引
-  initActiveIndex()
-  
-  // 监听路由变化，更新激活索引
-  router.afterEach(() => {
-    initActiveIndex()
-  })
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-})
-
-const navTo = ()=>{
+const navTo = () => {
+  isDropdownVisible.value = false
   router.push('/admin')
 }
 </script>
 
 <style scoped>
-/* 样式部分保持不变 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 #nav-container {
   width: 100%;
-  height: 100px;
-  padding-left: 50px;
-  min-width: 1000px;
-  display: flex;
-  flex-direction: row;
+  min-height: var(--blog-header-height, 108px);
+  padding: 14px 20px 12px;
   background-color: var(--app-nav-bg);
-  box-shadow: 0 2px 4px 0 var(--app-nav-shadow);
-  backdrop-filter: blur(10px); 
+  border-bottom: 1px solid var(--blog-nav-border);
   position: fixed;
   top: 0;
   z-index: 1000;
-  transition: transform 0.3s ease; /* 使用transform实现平滑过渡 */
   user-select: none;
-  transform: translateY(0); /* 初始位置 */
 }
 
-#nav-container.hidden {
-  transform: translateY(-100%); /* 完全隐藏导航栏 */
-}
-
-.nav-left {
-  width: 50%; 
+.nav-inner {
+  max-width: var(--blog-content-max, 960px);
+  margin: 0 auto;
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
 }
 
-.nav-left img {
-  user-select: none;
-  height: 60%;
+.nav-brand {
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
-.nav-right {
-  padding-right: 30px;
-  width: 50%;
+.site-name {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--app-text-primary);
+  text-decoration: none;
+}
+
+.site-name:hover {
+  color: var(--blog-link);
+}
+
+.site-tagline {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--app-text-muted);
+}
+
+.nav-toolbar {
+  flex: 1 1 280px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  min-width: 0;
+}
+
+.search {
+  display: flex;
+  width: 100%;
+  max-width: 360px;
+  margin-left: auto;
+  gap: 0;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--blog-input-border);
+  border-right: none;
+  border-radius: 2px 0 0 2px;
+  background: var(--app-surface);
+  color: var(--app-text-primary);
+  font-size: 14px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--blog-link);
+}
+
+.search-btn {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--blog-link);
+  border-radius: 0 2px 2px 0;
+  background: var(--blog-link);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.search-btn:hover {
+  filter: brightness(1.05);
+}
+
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
-
-  .nav-item{
-    width: 70%;
-    height: 100%;
-    white-space: nowrap; /* 防止文字换行 */
-
-    /*导航栏样式 */
-    .nav-links {
-      display: flex;
-      height: 100%;
-      align-items: center;
-      justify-content: flex-end; /* 靠右对齐 */
-      gap: 30px; /* 项间距 */
-      padding-right: 20px; /* 右侧留空 */
-    }
-
-    .nav-links a {
-      position: relative;
-      color: var(--nav-link-color);
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 5px 0;
-      transition: all 0.3s ease;
-    }
-
-    /* 下划线高亮效果 */
-    .nav-links a::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background-color: var(--nav-underline);
-      transition: width 0.3s ease;
-    }
-
-    .nav-links a.active {
-      color: var(--nav-link-active);
-      font-weight: 600;
-    }
-
-    .nav-links a.active::after {
-      width: 100%; /* 激活状态下划线全宽 */
-    }
-
-    .nav-links a:hover::after {
-      width: 100%; /* 悬停时也显示完整下划线 */
-    }
-
-  }
+  gap: 4px 18px;
+  padding-top: 2px;
 }
 
-/* 下拉菜单样式 */
+.nav-link {
+  font-size: 15px;
+  color: var(--blog-nav-link);
+  text-decoration: none;
+  padding: 2px 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--blog-link);
+}
+
+.nav-link.active {
+  color: var(--blog-link);
+  font-weight: 600;
+  border-bottom-color: var(--blog-link);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.theme-toggle {
+  padding: 8px;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--blog-nav-link);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--blog-link);
+  background-color: var(--blog-nav-link-hover-bg);
+}
+
+.theme-toggle .iconfont {
+  font-size: 20px;
+}
+
 .dropdown-wrapper {
   position: relative;
   display: inline-block;
@@ -285,36 +280,14 @@ const navTo = ()=>{
 }
 
 .dropdown-trigger {
-  font-size: 24px;
+  font-size: 22px;
   padding: 8px;
-  transition: all 0.3s ease;
+  color: var(--blog-nav-link);
+  transition: color 0.2s ease;
 }
 
 .dropdown-trigger:hover {
-  color: var(--nav-trigger-hover);
-}
-
-.theme-toggle {
-  margin-right: 16px;
-  padding: 8px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  color: var(--nav-link-color);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.25s ease, background-color 0.25s ease;
-}
-
-.theme-toggle:hover {
-  color: var(--nav-trigger-hover);
-  background-color: var(--nav-dropdown-hover-bg);
-}
-
-.theme-toggle .iconfont {
-  font-size: 22px;
+  color: var(--blog-link);
 }
 
 .dropdown-menu {
@@ -323,36 +296,57 @@ const navTo = ()=>{
   right: 0;
   min-width: 160px;
   background-color: var(--nav-dropdown-bg);
-  border-radius: 4px;
-  box-shadow: 0 5px 15px 0 var(--app-shadow-soft);
+  border: 1px solid var(--blog-divider);
+  border-radius: 2px;
+  box-shadow: 0 4px 12px var(--app-shadow-soft);
   list-style: none;
-  padding: 10px 0;
-  margin: 5px 0 0 0;
+  padding: 6px 0;
+  margin: 6px 0 0;
   z-index: 2000;
 }
 
 .dropdown-menu li {
-  padding: 10px 20px;
+  padding: 10px 18px;
   font-size: 14px;
   color: var(--nav-dropdown-text);
   cursor: pointer;
-  transition: all 0.3s;
+  transition: background-color 0.2s ease, color 0.2s ease;
   white-space: nowrap;
 }
 
 .dropdown-menu li:hover {
   background-color: var(--nav-dropdown-hover-bg);
-  color: var(--nav-dropdown-hover-text);
+  color: var(--blog-link);
 }
 
-/* 过渡动画 */
-.fade-enter-active, .fade-leave-active {
-  transition: all 0.3s ease;
-  transform-origin: top center;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform-origin: top right;
 }
 
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(-6px);
+}
+
+@media (max-width: 720px) {
+  .search {
+    margin-left: 0;
+    max-width: none;
+  }
+
+  .nav-links {
+    justify-content: flex-start;
+  }
+
+  .nav-inner {
+    flex-direction: column;
+  }
+
+  .nav-actions {
+    align-self: flex-end;
+  }
 }
 </style>

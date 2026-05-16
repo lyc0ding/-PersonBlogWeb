@@ -1,38 +1,67 @@
 <template>
-  <div class="container">
-     <Banner></Banner>
+  <div class="blog-shell">
+    <Banner />
 
-     <div class="mian-content">
-      <Main></Main>
-      <div style="display: flex;flex-direction: column;gap: 10px;">
-        <Introduction></Introduction>
-        <TagCloud></TagCloud>
-      </div>
-     </div>
-     
+    <div class="blog-grid">
+      <main class="blog-main">
+        <Main />
+      </main>
+      <aside class="blog-aside">
+        <Introduction />
+        <section class="widget">
+          <h3 class="widget-title">分类</h3>
+          <TagCloud />
+        </section>
+      </aside>
+    </div>
   </div>
 </template>
 
 <script setup>
-import TagCloud from '../../components/sider/TagCloud.vue';
-import Introduction from '@/components/sider/Introduction.vue';
-import Banner from './Banner.vue';
-import Main from './Main.vue';
+import TagCloud from '../../components/sider/TagCloud.vue'
+import Introduction from '@/components/sider/Introduction.vue'
+import Banner from './Banner.vue'
+import Main from './Main.vue'
 </script>
 
 <style scoped>
-.container{
+.blog-shell {
   width: 100%;
+  padding-bottom: 32px;
+}
 
-  .mian-content{
-    margin: 20px auto;
-    /* height: 1800px; */
-    width: 85%;
-    display: grid;
-    /* 关键设置：第一列自适应，第二列固定 */
-    grid-template-columns: 1fr 250px;
-    gap: 10px; /* 可选间距 */
-    
+.blog-grid {
+  max-width: var(--blog-content-max, 960px);
+  margin: 0 auto;
+  padding: 8px 16px 0;
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 36px;
+  align-items: start;
+}
+
+.blog-main {
+  min-width: 0;
+}
+
+.blog-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.widget-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--app-text-primary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--blog-divider);
+}
+
+@media (max-width: 900px) {
+  .blog-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,17 +1,16 @@
 <template>
-  <div class="container" style="width: 250px;height: 470px;" ref="boxRef">
-    <!-- 改为动态绑定style来控制top值，而不是固定的类样式 -->
+  <div class="container" ref="boxRef">
     <div class="box">
+      <h3 class="widget-title">公告</h3>
       <div class="personal-info">
-        <div class="background"> 
+        <div class="background">
           <div class="blur-mask"></div>
         </div>
-        <!-- 修改头像容器固定尺寸 -->
-        <div class="avatar" @click="ToLive()"> 
-          <img src="/src/assets/img/avatar.png">
+        <div class="avatar" @click="toAbout()">
+          <img src="/src/assets/img/avatar.png" alt="头像">
         </div>
-        <div class="marker" style="width: 90%;white-space: nowrap;text-overflow: ellipsis;overflow: hidden;margin-top: 20px;">
-          “做都做了，做完再说”
+        <div class="marker">
+          把握住当下，才能开辟未来
         </div>
         <div class="overview">
           <div class="vertical-list">
@@ -21,32 +20,33 @@
           </div>
         </div>
       </div>
+      <h3 class="widget-title link-widget-title">链接</h3>
       <div class="other-link">
-          <div class="github">
-            <i class="iconfont icon-github">&nbsp;&nbsp;GitHub</i>
-          </div>
-          <div class="link">
-            <i class="iconfont icon-lianjie">&nbsp;&nbsp;Links</i>
-          </div>
-          <div class="video">
-            <i class="iconfont icon-music">&nbsp;&nbsp;Music</i>
-          </div>
-          <div class="music">
-            <i class="iconfont icon-shipin">&nbsp;&nbsp;Video</i>
-          </div>
+        <div class="github">
+          <i class="iconfont icon-github">&nbsp;&nbsp;GitHub</i>
+        </div>
+        <div class="link">
+          <i class="iconfont icon-lianjie">&nbsp;&nbsp;Links</i>
+        </div>
+        <div class="video">
+          <i class="iconfont icon-music">&nbsp;&nbsp;Music</i>
+        </div>
+        <div class="music">
+          <i class="iconfont icon-shipin">&nbsp;&nbsp;Video</i>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const ToLive =() => {
-  router.push('/live')
+const toAbout = () => {
+  router.push('/about')
 }
 
 const boxRef = ref(null)
@@ -81,13 +81,29 @@ const calculateDistance = () => {
 </script>
 
 <style scoped>
+.container {
+  width: 100%;
+}
+
+.widget-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--app-text-primary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--blog-divider);
+}
+
+.link-widget-title {
+  margin-top: 18px;
+}
+
 .box {
-  width: 250px;
-  height: 470px;
+  width: 100%;
   background-color: var(--app-surface);
-  transition: all 0.3s ease-out;
-  /* 移除默认position，改为动态绑定 */
-  /* border-radius: 15px; */
+  border: 1px solid var(--blog-card-border);
+  padding: 14px 12px 16px;
+  transition: border-color 0.2s ease;
 }
 
 .personal-info {
@@ -157,10 +173,14 @@ const calculateDistance = () => {
   cursor: none;
 }
 
-.marker{
-  font-size: 15px;
-  font-family: Arial, Helvetica, sans-serif;
+.marker {
+  width: 100%;
+  margin-top: 16px;
+  padding: 0 8px;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--app-text-muted);
+  text-align: center;
 }
 
 .nickname, .marker {
@@ -194,11 +214,11 @@ const calculateDistance = () => {
 .other-link {
   display: flex;
   flex-direction: column;
-  align-items: center;    /* 容器水平居中 */
-  width: 40%;             /* 适当宽度 */
-  margin: 0 auto;         /* 水平居中关键 */
-  padding: 10px 0 0 0;        /* 增加垂直间距 */
-  gap: 5px;              /* 子项间距 */
+  align-items: stretch;
+  width: 100%;
+  margin: 0;
+  padding: 10px 0 0 0;
+  gap: 5px;
   color: var(--app-text-primary);
 }
 

@@ -1,36 +1,50 @@
-// 与 variables.scss 配色对齐，供运行时主题切换（html.dark）
+// 参考 liveout.cn 的浅色极简博客风；深色模式为同结构的暗色版
 
 :root {
-  --app-bg-primary: #f3f4f6;
-  --app-bg-secondary: #e0e7ee;
-  --app-text-primary: #2a303c;
-  --app-text-secondary: #4a5568;
-  --app-border: #b0c4d6;
-  --app-shadow-soft: rgba(0, 0, 0, 0.12);
+  --blog-content-max: 960px;
+  --blog-header-height: 118px;
+  --blog-link: #2b6cb0;
+  --blog-link-hover: #1d4ed8;
+  --blog-divider: #e8e8e8;
+  --blog-nav-border: #ededed;
+  --blog-nav-link: #444444;
+  --blog-nav-link-hover-bg: rgba(43, 108, 176, 0.08);
+  --blog-input-border: #d0d0d0;
+  --blog-meta: #888888;
+  --blog-badge-bg: #f2f2f2;
+  --blog-badge-text: #666666;
+  --blog-card-border: #eeeeee;
+
+  --app-bg-primary: #fafafa;
+  --app-bg-secondary: #f5f5f5;
+  --app-text-primary: #222222;
+  --app-text-secondary: #555555;
+  --app-border: #e5e5e5;
+  --app-shadow-soft: rgba(0, 0, 0, 0.06);
 
   --app-surface: #ffffff;
-  --app-surface-muted: #f1f5f9;
-  --app-text-muted: #64748b;
-  --app-divider-subtle: #e2e8f0;
-  --app-nav-bg: rgba(243, 244, 246, 0.82);
-  --app-nav-shadow: var(--app-shadow-soft);
+  --app-surface-muted: #f9f9f9;
+  --app-text-muted: #888888;
+  --app-divider-subtle: #eeeeee;
+  --app-nav-bg: #ffffff;
+  --app-nav-shadow: transparent;
   --app-backdrop: rgba(15, 23, 42, 0.45);
   --app-loading-overlay: rgba(0, 0, 0, 0.65);
-  --app-media-letterbox: #0f172a;
-  --app-on-media: #ffffff;
+  --app-media-letterbox: #f1f5f9;
+  --app-on-media: #1a1a1a;
   --app-control-on-dark: rgba(255, 255, 255, 0.14);
   --app-control-on-dark-hover: rgba(255, 255, 255, 0.28);
-  --app-carousel-nav-bg: rgba(148, 163, 184, 0.55);
+  --app-carousel-nav-bg: rgba(148, 163, 184, 0.45);
   --app-carousel-nav-fg: #334155;
-  --app-carousel-nav-hover-bg: var(--app-surface);
-  --app-gradient-start: #22df6a;
-  --app-gradient-end: #59cdeb;
-  --app-cursor-block: #2a303c;
-  --app-link-hover: var(--nav-underline);
-  --app-stat-label: var(--app-text-primary);
+  --app-carousel-nav-hover-bg: #ffffff;
+  --app-gradient-start: #2b6cb0;
+  --app-gradient-end: #3182ce;
+  --app-cursor-block: #222222;
+  --app-link-hover: var(--blog-link-hover);
+  --app-stat-label: var(--app-text-secondary);
   --app-danger: #e11d48;
-  --app-hot-icon: #ea580c;
-  --app-comments-icon: #0891b2;
+  --app-hot-icon: #c05621;
+  --app-comments-icon: #2b6cb0;
 
   --admin-layout-bg: #f1f5f9;
   --admin-header-bg: #1e293b;
@@ -45,9 +59,9 @@
   --admin-collapse-hover: #60a5fa;
 
   --app-tags-bg: #ffffff;
-  --app-tags-border: #d8dce5;
+  --app-tags-border: #e5e5e5;
   --app-tags-item-text: #495060;
-  --app-tags-active-bg: #409eff;
+  --app-tags-active-bg: #2b6cb0;
   --app-tags-active-text: #ffffff;
   --app-tags-close-hover: var(--app-text-primary);
   --app-tags-active-dot: #ffffff;
@@ -77,30 +91,42 @@
   --app-scrollbar-thumb: rgba(100, 116, 139, 0.35);
   --app-scrollbar-thumb-hover: rgba(100, 116, 139, 0.55);
 
-  --nav-link-color: #333;
-  --nav-link-active: #17aa03;
-  --nav-underline: #22df6a;
+  --nav-link-color: var(--blog-nav-link);
+  --nav-link-active: var(--blog-link);
+  --nav-underline: var(--blog-link);
   --nav-dropdown-bg: #ffffff;
-  --nav-dropdown-text: #606266;
-  --nav-dropdown-hover-bg: #ecf5ff;
-  --nav-dropdown-hover-text: #22df6a;
-  --nav-trigger-hover: #17aa03;
+  --nav-dropdown-text: #444444;
+  --nav-dropdown-hover-bg: #f0f6fc;
+  --nav-dropdown-hover-text: var(--blog-link);
+  --nav-trigger-hover: var(--blog-link);
 }
 
 html.dark {
-  --app-bg-primary: #101418;
-  --app-bg-secondary: #15191d;
-  --app-text-primary: #f1f5fb;
-  --app-text-secondary: #b0c4d6;
-  --app-border: #4a5258;
+  --blog-link: #63b3ed;
+  --blog-link-hover: #90cdf4;
+  --blog-divider: #3d4550;
+  --blog-nav-border: #2d333b;
+  --blog-nav-link: #cbd5e1;
+  --blog-nav-link-hover-bg: rgba(99, 179, 237, 0.12);
+  --blog-input-border: #4a5568;
+  --blog-meta: #94a3b8;
+  --blog-badge-bg: #2d3748;
+  --blog-badge-text: #cbd5e1;
+  --blog-card-border: #3d4550;
+
+  --app-bg-primary: #1a1d21;
+  --app-bg-secondary: #22262c;
+  --app-text-primary: #f1f5f9;
+  --app-text-secondary: #cbd5e1;
+  --app-border: #3d4550;
   --app-shadow-soft: rgba(0, 0, 0, 0.35);
 
-  --app-surface: #1a1f26;
-  --app-surface-muted: #141820;
+  --app-surface: #22262c;
+  --app-surface-muted: #1e2126;
   --app-text-muted: #94a3b8;
-  --app-divider-subtle: #334155;
-  --app-nav-bg: rgba(16, 20, 24, 0.85);
-  --app-nav-shadow: rgba(0, 0, 0, 0.4);
+  --app-divider-subtle: #3d4550;
+  --app-nav-bg: #22262c;
+  --app-nav-shadow: rgba(0, 0, 0, 0.25);
   --app-backdrop: rgba(0, 0, 0, 0.58);
   --app-loading-overlay: rgba(0, 0, 0, 0.72);
   --app-media-letterbox: #020617;
@@ -110,11 +136,11 @@ html.dark {
   --app-carousel-nav-bg: rgba(51, 65, 85, 0.65);
   --app-carousel-nav-fg: #e2e8f0;
   --app-carousel-nav-hover-bg: var(--app-surface-muted);
-  --app-gradient-start: #5ee27a;
-  --app-gradient-end: #7dd3fc;
+  --app-gradient-start: #63b3ed;
+  --app-gradient-end: #90cdf4;
   --app-cursor-block: #f1f5fb;
   --app-hot-icon: #fb923c;
-  --app-comments-icon: #22d3ee;
+  --app-comments-icon: #63b3ed;
 
   --admin-layout-bg: #101418;
   --admin-header-bg: #0f172a;
@@ -145,13 +171,13 @@ html.dark {
   --app-code-text: #e2e8f0;
 
   --nav-link-color: #e2e8f0;
-  --nav-link-active: #5ee27a;
-  --nav-underline: #5ee27a;
-  --nav-dropdown-bg: #1e2226;
+  --nav-link-active: #63b3ed;
+  --nav-underline: #63b3ed;
+  --nav-dropdown-bg: #2d333b;
   --nav-dropdown-text: #e2e8f0;
-  --nav-dropdown-hover-bg: #2d3a40;
-  --nav-dropdown-hover-text: #7dffb0;
-  --nav-trigger-hover: #7dffb0;
+  --nav-dropdown-hover-bg: #374151;
+  --nav-dropdown-hover-text: #90cdf4;
+  --nav-trigger-hover: #90cdf4;
 }
 
 html,
@@ -160,4 +186,12 @@ body,
   background-color: var(--app-bg-primary);
   color: var(--app-text-primary);
   transition: background-color 0.25s ease, color 0.2s ease;
+}
+
+a {
+  color: var(--blog-link);
+}
+
+a:hover {
+  color: var(--blog-link-hover);
 }

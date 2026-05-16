@@ -35,7 +35,7 @@
 
   --section-gap: 160px;
 
-  --el-color-primary: rgb(75, 248, 75);
+  --el-color-primary: #2b6cb0;
 }
 
 /* 与 themeStore（html.dark）一致，避免仅跟随系统偏好而与手动主题切换脱节 */

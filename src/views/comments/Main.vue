@@ -227,10 +227,11 @@ onMounted(() => {
   flex: 1;
 }
 
-.guestbook{
+.guestbook {
   width: 100%;
   background-color: var(--app-surface);
-  padding: 10px 0;
+  border: 1px solid var(--blog-card-border);
+  padding: 20px 0;
   display: flex;
   flex-direction: column;
 
@@ -263,11 +264,11 @@ onMounted(() => {
       gap: 15px;
       padding: 30px;
 
-      .input-with-text{
+      .input-with-text {
         width: 100%;
-        border:none;
-        box-shadow: 10px 0px 5px 0px var(--app-shadow-soft), -10px 0px 5px 0px var(--app-shadow-soft);
-        padding: 10px 20px;
+        border: 1px solid var(--blog-input-border);
+        box-shadow: none;
+        padding: 10px 14px;
         /* 固定高度 */
         height: 150px;
         /* 禁用拉伸功能 */
@@ -287,11 +288,11 @@ onMounted(() => {
         flex-direction: row;
         gap: 10px;
 
-        & > input{
+        & > input {
           outline: none;
           flex: 1;
-          border: var(--app-border) 1px dashed;
-          box-shadow: 0 2px 4px var(--app-shadow-soft), 0 4px 8px var(--app-shadow-soft);
+          border: 1px solid var(--blog-input-border);
+          box-shadow: none;
           
           background-repeat: no-repeat;
           background-size: 20px;
@@ -327,11 +328,12 @@ onMounted(() => {
   }
 }
 
-.latest-guestbook{
+.latest-guestbook {
   width: 100%;
-  margin-top: 10px;
+  margin-top: 16px;
   background-color: var(--app-surface);
-  padding: 10px 0;
+  border: 1px solid var(--blog-card-border);
+  padding: 20px 0;
   display: flex;
   flex-direction: column;
 
@@ -345,12 +347,13 @@ onMounted(() => {
   .latest-guestbook-content{
     flex: 1;
 
-    .latest-guestbook-content-item{
+    .latest-guestbook-content-item {
       width: 100%;
-      padding: 10px 20px;
+      padding: 16px 16px;
       display: flex;
       flex-direction: column;
-      box-shadow: 10px 10px 20px 0 var(--app-shadow-soft);
+      border-bottom: 1px solid var(--blog-divider);
+      box-shadow: none;
     }
   }
 }

@@ -13,14 +13,16 @@ import MainVue from './Main.vue';
 </script>
 
 <style scoped>
-.container{
+.container {
   width: 100%;
+  max-width: var(--blog-content-max, 960px);
+  margin: 0 auto;
+  padding: 16px 16px 40px;
 }
 
-.main-container{
-    width: 85%;
-    margin:0 auto;
-    padding: 20px 0;
-    /* background-color: aqua; */
+.main-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 0 20px;
 }
 </style>

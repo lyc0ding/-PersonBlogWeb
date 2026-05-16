@@ -1,8 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import AboutView from '@/views/AboutView.vue'
-import { start, done } from "@/utils/nprogress";
 import { useTagStore } from '@/stores/tagStore'
-import nProgress from 'nprogress';
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
@@ -25,7 +22,7 @@ const router = createRouter({
                     component: () => import('@/views/space/Index.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
-                        title: '碎碎念'
+                        title: '说说'
                     }
                 },
                 {
@@ -34,7 +31,7 @@ const router = createRouter({
                     component: () => import('@/views/community/Index.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
-                        title: '技术社区'
+                        title: '文章'
                     }
                 },
                 {
@@ -43,24 +40,37 @@ const router = createRouter({
                     component: () => import('@/views/comments/Index.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
-                        title: '访客留言'
+                        title: '留言板'
+                    }
+                },
+                {
+                    path: '/links',
+                    name: 'Friends',
+                    component: () => import('@/views/FriendsView.vue'),
+                    meta: {
+                        keepAlive: true,
+                        title: '友链'
+                    }
+                },
+                {
+                    path: '/about',
+                    name: 'about',
+                    component: () => import('@/views/AboutView.vue'),
+                    meta: {
+                        keepAlive: true,
+                        title: '关于'
+                    }
+                },
+                {
+                    path: '/live',
+                    name: 'Live',
+                    component: () => import('@/views/live/Index.vue'),
+                    meta: {
+                        keepAlive: true, // 启用缓存
+                        title: '关于我'
                     }
                 },
             ]
-        },
-        {
-            path: '/about',
-            name: 'about',
-            component: AboutView,
-        },
-        {
-            path: '/live',
-            name: 'Live',
-            component: () => import('@/views/live/Index.vue'),
-            meta: {
-                keepAlive: true, // 启用缓存
-                title: '作者生活'
-            }
         },
         {
             path: '/admin',
@@ -118,8 +128,17 @@ const router = createRouter({
                     name: 'TecArticleAdd',
                     component: () => import('@/views/admin/tec-article/ArticlePublish.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
+                        keepAlive: false,
                         title: '新增文章'
+                    },
+                },
+                {
+                    path: '/admin/tec/article/edit/:id',
+                    name: 'TecArticleEdit',
+                    component: () => import('@/views/admin/tec-article/ArticlePublish.vue'),
+                    meta: {
+                        keepAlive: false,
+                        title: '编辑文章'
                     },
                 },
                 {
@@ -176,6 +195,7 @@ router.beforeEach((to, from) => {
 
 // 处理动态路由参数变化
 router.afterEach((to, from) => {
+    const tagStore = useTagStore()
     if (to.name === from.name && to.path !== from.path) {
         tagStore.updateTagPath(from.path, to.path, to.fullPath)
     }

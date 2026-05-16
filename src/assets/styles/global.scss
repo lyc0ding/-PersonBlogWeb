@@ -13,4 +13,16 @@ body,
 body {
     color: var(--app-text-primary);
     background-color: var(--app-bg-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+::selection {
+    background: rgba(43, 108, 176, 0.22);
+}
+
+html.dark ::selection {
+    background: rgba(99, 179, 237, 0.28);
 }

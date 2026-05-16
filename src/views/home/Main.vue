@@ -1,10 +1,10 @@
 <template>
   <div id="main-container">
     <div class="title1">
-        <h3>建站时间线</h3>
+      <h3>建站时间线</h3>
     </div>
 
-    <TimeLine/>
+    <TimeLine />
   </div>
 </template>
 
@@ -17,25 +17,27 @@ import TimeLine from '@/views/home/TimeLine.vue';
 <style scoped>
 #main-container {
   width: 100%;
-  height: 1000px;
+  max-width: var(--blog-content-max, 960px);
+  margin: 0 auto;
+  padding: 8px 16px 48px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  font-family: 'Noto Sans SC', sans-serif;
+  align-items: stretch;
 }
 
 .title1 {
   width: 100%;
   text-align: center;
-  position: relative;
+  padding: 12px 0 20px;
+  border-bottom: 1px solid var(--blog-divider);
+  margin-bottom: 8px;
 }
 
 .title1 h3 {
-  /* 字体设置 */
-  font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-  font-size: 2.2rem;
-  font-weight: 700;
-  letter-spacing: 1px;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   color: var(--app-text-primary);
 }
 

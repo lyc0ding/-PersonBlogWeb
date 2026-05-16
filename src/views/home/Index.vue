@@ -1,13 +1,12 @@
 <script setup>
-import Banner from '@/views/home/computer/Index.vue';
-import Main from '@/views/home/Main.vue';
+import HomeHero from '@/views/home/HomeHero.vue'
+import Main from '@/views/home/Main.vue'
 </script>
 
 <template>
   <div id="home-container">
-    <!-- 主页面内容 -->
-    <Banner></Banner>
-    <Main></Main>
+    <HomeHero />
+    <Main />
   </div>
 </template>
 

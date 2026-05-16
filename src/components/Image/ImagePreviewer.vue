@@ -178,7 +178,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: var(--app-loading-overlay);
   backdrop-filter: blur(3px);
 }
 
@@ -190,8 +190,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  background-color: white;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background-color: var(--app-surface);
+  box-shadow: 0 10px 30px var(--app-shadow-soft);
   overflow: hidden;
 }
 
@@ -200,12 +200,12 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
   display: flex;
   justify-content: center;
   padding: 15px;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: var(--app-code-header-bg);
   gap: 12px;
 }
 
 .preview-controls button {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--app-control-on-dark);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -215,7 +215,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
   align-items: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: white;
+  color: var(--app-on-media);
   font-size: 16px;
 
   & > .iconfont{
@@ -224,7 +224,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
 }
 
 .preview-controls button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--app-control-on-dark-hover);
   transform: scale(1.1);
 }
 

@@ -226,10 +226,13 @@ onUnmounted(() => {
 
 <style scoped>
 .tagcloud-all {
-  width: 250px;
-  height: 250px;
+  width: 100%;
+  max-width: 250px;
+  height: 240px;
+  margin: 0 auto;
   position: relative;
   background: var(--app-surface-muted);
+  border: 1px solid var(--blog-card-border);
   cursor: pointer;
 }
 .tagcloud-all a {

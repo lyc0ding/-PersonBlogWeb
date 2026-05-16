@@ -1,6 +1,6 @@
 @import './base.css';
 
 #nprogress .bar {
-  background: linear-gradient(to left, rgb(134, 240, 63), rgb(124, 255, 120)) !important;
-  height: 3px !important;         /* 进度条高度 */
+  background: linear-gradient(to right, #2b6cb0, #63b3ed) !important;
+  height: 2px !important;
 }
