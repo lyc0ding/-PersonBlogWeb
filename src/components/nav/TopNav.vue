@@ -2,8 +2,8 @@
   <div id="nav-container">
     <div class="nav-inner">
       <div class="nav-brand">
-        <router-link to="/" class="site-name" @click="blurTarget">Echo</router-link>
-        <p class="site-tagline">Life is code. I will debug it.</p>
+        <router-link to="/" class="site-name" @click="blurTarget">Lycoding</router-link>
+        <p class="site-tagline">Move it . Life for you .</p>
       </div>
 
       <div class="nav-toolbar">
@@ -71,7 +71,7 @@ const themeStore = useThemeStore()
 
 const navItems = [
   { label: '首页', path: '/' },
-  { label: '说说', path: '/space' },
+  { label: '朋友圈', path: '/space' },
   { label: '文章', path: '/technolyge' },
   { label: '留言板', path: '/comments' },
   { label: '友链', path: '/links' },

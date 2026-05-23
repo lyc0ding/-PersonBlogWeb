@@ -32,7 +32,17 @@ export function useArticleEditor(getArticleId, options = {}) {
   })
 
   const wordCount = computed(() => {
+    if (form.value.contentText?.trim()) {
+      return form.value.contentText.replace(/\s+/g, '').length
+    }
+    if (form.value.contentHtml?.trim()) {
+      return form.value.contentHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, '').length
+    }
     return form.value.contentBlocks.reduce((sum, block) => {
+      if (block.type === 'richText') {
+        const text = block.text || block.content?.replace?.(/<[^>]*>/g, '') || ''
+        return sum + text.replace(/\s+/g, '').length
+      }
       if (block.type === 'paragraph' || block.type === 'heading' || block.type === 'quote') {
         return sum + (block.content?.length ?? 0)
       }
@@ -113,7 +123,12 @@ export function useArticleEditor(getArticleId, options = {}) {
   }
 
   function hasBlockContent() {
+    if (form.value.contentText?.trim()) return true
+    if (form.value.contentHtml?.replace(/<[^>]*>/g, '').trim()) return true
     return form.value.contentBlocks.some((b) => {
+      if (b.type === 'richText') {
+        return Boolean(b.text?.trim?.() || b.content?.replace?.(/<[^>]*>/g, '').trim?.())
+      }
       if (b.type === 'image') return Boolean(b.url)
       return Boolean(b.content?.trim?.())
     })

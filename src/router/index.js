@@ -22,7 +22,7 @@ const router = createRouter({
                     component: () => import('@/views/space/Index.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
-                        title: '说说'
+                        title: '朋友圈'
                     }
                 },
                 {

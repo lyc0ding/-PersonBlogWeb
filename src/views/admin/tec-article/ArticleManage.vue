@@ -5,13 +5,13 @@
         v-model="query.keyword"
         placeholder="搜索标题 / 摘要"
         clearable
-        style="width: 240px"
+        class="keyword"
         @keyup.enter="loadList"
       />
-      <el-select v-model="query.status" placeholder="状态" clearable style="width: 120px" @change="loadList">
-        <el-option label="草稿" :value="0" />
-        <el-option label="已发布" :value="1" />
-        <el-option label="已归档" :value="2" />
+      <el-select v-model="query.status" placeholder="状态" clearable class="status" @change="loadList">
+        <el-option label="草稿" :value="ARTICLE_STATUS.DRAFT" />
+        <el-option label="已发布" :value="ARTICLE_STATUS.PUBLISHED" />
+        <el-option label="已归档" :value="ARTICLE_STATUS.ARCHIVED" />
       </el-select>
       <el-button type="primary" @click="loadList">查询</el-button>
       <el-button type="success" @click="goCreate">
@@ -20,24 +20,12 @@
       </el-button>
     </div>
 
-    <el-table v-loading="loading" :data="tableData" border stripe style="width: 100%">
-      <el-table-column type="selection" width="48" />
-      <el-table-column label="标题" prop="title" min-width="200" show-overflow-tooltip />
-      <el-table-column label="摘要" prop="summary" min-width="180" show-overflow-tooltip />
-      <el-table-column label="封面" width="100">
-        <template #default="{ row }">
-          <el-image
-            v-if="row.coverUrl"
-            :src="row.coverUrl"
-            fit="cover"
-            style="width: 56px; height: 36px; border-radius: 4px"
-          />
-          <span v-else class="text-muted">无</span>
-        </template>
-      </el-table-column>
+    <el-table v-loading="loading" :data="tableData" border stripe>
+      <el-table-column label="标题" prop="title" min-width="220" show-overflow-tooltip />
+      <el-table-column label="摘要" prop="summary" min-width="220" show-overflow-tooltip />
       <el-table-column label="类型" width="90">
         <template #default="{ row }">
-          {{ row.type === 'shuoshuo' ? '说说' : '文章' }}
+          {{ row.type === ARTICLE_TYPE.SHUOSHUO ? '朋友圈' : '文章' }}
         </template>
       </el-table-column>
       <el-table-column label="状态" width="100">
@@ -47,19 +35,14 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="更新时间" prop="updateTime" width="170" />
-      <el-table-column label="操作" align="center" width="220" fixed="right">
+      <el-table-column label="更新时间" prop="updateTime" width="180" />
+      <el-table-column label="操作" width="190" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="goEdit(row.id)">编辑</el-button>
-          <el-button
-            link
-            :type="row.status === 1 ? 'warning' : 'success'"
-            size="small"
-            @click="toggleStatus(row)"
-          >
-            {{ row.status === 1 ? '下线' : '发布' }}
+          <el-button link type="primary" @click="goEdit(row.id)">编辑</el-button>
+          <el-button link :type="row.status === ARTICLE_STATUS.PUBLISHED ? 'warning' : 'success'" @click="toggleStatus(row)">
+            {{ row.status === ARTICLE_STATUS.PUBLISHED ? '下线' : '发布' }}
           </el-button>
-          <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -79,16 +62,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import {
-  articlePageService,
   articleDeleteService,
+  articlePageService,
   articleUpdateStatusService,
 } from '@/api/admin/article'
-import { ARTICLE_STATUS, ARTICLE_STATUS_LABEL } from '@/constants/article'
+import { ARTICLE_STATUS, ARTICLE_STATUS_LABEL, ARTICLE_TYPE } from '@/constants/article'
 
 const router = useRouter()
 const loading = ref(false)
@@ -103,21 +86,22 @@ const query = reactive({
 })
 
 function statusTagType(status) {
-  if (status === 1) return 'success'
-  if (status === 0) return 'info'
+  if (status === ARTICLE_STATUS.PUBLISHED) return 'success'
+  if (status === ARTICLE_STATUS.DRAFT) return 'info'
   return 'warning'
 }
 
-function mockRows() {
-  return Array.from({ length: 8 }, (_, i) => ({
-    id: i + 1,
-    title: ['Codex 自制宠物', 'U-Boot 移植笔记', '2025 年终总结'][i % 3],
-    summary: '示例摘要内容，联调后端后替换为接口数据。',
-    coverUrl: i % 2 ? '/img/bac1.jpg' : '',
-    type: i % 4 === 0 ? 'shuoshuo' : 'article',
-    status: i % 3,
-    updateTime: '2026-05-08 13:06:00',
-  }))
+function fallbackRows() {
+  return [
+    {
+      id: 1,
+      title: '博客编辑器联调示例',
+      summary: '后端未启动时展示的本地示例数据。',
+      type: ARTICLE_TYPE.ARTICLE,
+      status: ARTICLE_STATUS.DRAFT,
+      updateTime: new Date().toLocaleString('zh-CN', { hour12: false }),
+    },
+  ]
 }
 
 async function loadList() {
@@ -128,7 +112,7 @@ async function loadList() {
     tableData.value = page?.records ?? page?.list ?? []
     total.value = page?.total ?? tableData.value.length
   } catch {
-    tableData.value = mockRows()
+    tableData.value = fallbackRows()
     total.value = tableData.value.length
   } finally {
     loading.value = false
@@ -145,16 +129,16 @@ function goEdit(id) {
 
 async function toggleStatus(row) {
   const next = row.status === ARTICLE_STATUS.PUBLISHED ? ARTICLE_STATUS.DRAFT : ARTICLE_STATUS.PUBLISHED
-  const tip = next === ARTICLE_STATUS.PUBLISHED ? '发布' : '下线为草稿'
+  const action = next === ARTICLE_STATUS.PUBLISHED ? '发布' : '下线'
   try {
-    await ElMessageBox.confirm(`确定${tip}该文章？`, '提示', { type: 'warning' })
+    await ElMessageBox.confirm(`确定${action}这篇文章？`, '提示', { type: 'warning' })
     await articleUpdateStatusService(row.id, next)
     row.status = next
-    ElMessage.success(`${tip}成功`)
+    ElMessage.success(`${action}成功`)
   } catch (err) {
     if (err !== 'cancel') {
       row.status = next
-      ElMessage.success(`后端未就绪，已在本地切换为${ARTICLE_STATUS_LABEL[next]}`)
+      ElMessage.warning(`后端未就绪，已在本地切换为${ARTICLE_STATUS_LABEL[next]}`)
     }
   }
 }
@@ -164,11 +148,13 @@ async function handleDelete(row) {
     await ElMessageBox.confirm('删除后不可恢复，是否继续？', '删除确认', { type: 'error' })
     await articleDeleteService(row.id)
     tableData.value = tableData.value.filter((item) => item.id !== row.id)
+    total.value = tableData.value.length
     ElMessage.success('删除成功')
   } catch (err) {
     if (err !== 'cancel') {
       tableData.value = tableData.value.filter((item) => item.id !== row.id)
-      ElMessage.success('后端未就绪，已从列表移除（刷新后恢复）')
+      total.value = tableData.value.length
+      ElMessage.warning('后端未就绪，已从本地列表移除')
     }
   }
 }
@@ -181,6 +167,10 @@ onMounted(loadList)
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 16px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
 }
 
 .toolbar {
@@ -190,13 +180,16 @@ onMounted(loadList)
   align-items: center;
 }
 
+.keyword {
+  width: min(280px, 100%);
+}
+
+.status {
+  width: 130px;
+}
+
 .pager {
   display: flex;
   justify-content: flex-end;
-}
-
-.text-muted {
-  color: var(--app-text-muted);
-  font-size: 12px;
 }
 </style>

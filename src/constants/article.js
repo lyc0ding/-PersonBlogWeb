@@ -56,6 +56,8 @@ export function createEmptyArticle() {
     type: ARTICLE_TYPE.ARTICLE,
     status: ARTICLE_STATUS.DRAFT,
     visibility: ARTICLE_VISIBILITY.PUBLIC,
+    contentHtml: '',
+    contentText: '',
     contentBlocks: [createBlock('paragraph')],
   }
 }

@@ -1,12 +1,22 @@
 <template>
-  <div class="tagcloud-all" ref="tagcloudall">
+  <div
+    class="tagcloud-all"
+    ref="tagcloudall"
+    :class="{ 'is-paused': state.isPaused }"
+  >
     <a
-      v-for="item in tagList"
+      v-for="(item, index) in tagList"
+      :key="item.name"
       :href="item.url"
       rel="external nofollow"
-      :style="`color:${item.color};top:0;left:0;`"
+      :class="{ 'is-hovered': hoveredIndex === index }"
+      :style="{ '--tag-color': item.color }"
+      @pointerenter="handleTagEnter(index)"
+      @pointerleave="handleTagLeave"
+      @focus="handleTagEnter(index)"
+      @blur="handleTagLeave"
     >
-      {{ item.name }}
+      <span>{{ item.name }}</span>
     </a>
   </div>
 </template>
@@ -18,22 +28,17 @@ import { ref, reactive, onMounted, nextTick, onUnmounted } from 'vue';
 const tagList = ref([]);
 const mcList = ref([]);
 const tagcloudall = ref(null);
+const hoveredIndex = ref(-1);
 
 const state = reactive({
-  radius: 100,
-  dtr: Math.PI / 180,
+  radius: 96,
   d: 350,
-  active: false,
+  isPaused: false,
   lasta: 0,
   lastb: 0,
   distr: true,
-  // 平滑速度系数
-  speed: 0.6,
-  mouseSpeed: 0.03, // 鼠标控制灵敏度
-  autoRotateSpeed: 0.2, // 自动转动速率
-  size: 250,
-  mouseX: 0,
-  mouseY: 0,
+  speed: 0.62,
+  autoRotateSpeed: 0.18,
   howElliptical: 1,
   sa: 0, ca: 0, sb: 0, cb: 0, sc: 0, cc: 0
 });
@@ -41,6 +46,7 @@ const state = reactive({
 let oList = null;
 let oA = null;
 let animationFrame = null;
+let resizeObserver = null;
 
 // 三角函数计算
 const sineCosine = (a, b, c) => {
@@ -80,17 +86,17 @@ const positionAll = async () => {
 
 // 平滑更新坐标（核心优化）
 const update = () => {
-  let a, b;
-
-  if (state.active) {
-    // 鼠标控制 - 平滑线性
-    a = (-state.mouseY / state.radius) * state.mouseSpeed;
-    b = (state.mouseX / state.radius) * state.mouseSpeed;
-  } else {
-    // 自动旋转 - 匀速线性
-    a = state.autoRotateSpeed * 0.01;
-    b = state.autoRotateSpeed * 0.015;
+  if (state.isPaused) {
+    state.lasta = 0;
+    state.lastb = 0;
+    doPosition();
+    depthSort();
+    animationFrame = requestAnimationFrame(update);
+    return;
   }
+
+  const a = state.autoRotateSpeed * 0.01;
+  const b = state.autoRotateSpeed * 0.015;
 
   // 缓动平滑算法（让旋转丝滑不抖动）
   state.lasta = state.lasta * state.speed + a * (1 - state.speed);
@@ -133,6 +139,8 @@ const update = () => {
 
 // 更新标签位置与样式
 const doPosition = () => {
+  if (!oList || !oA) return;
+
   const centerX = oList.offsetWidth / 2;
   const centerY = oList.offsetHeight / 2;
 
@@ -143,21 +151,51 @@ const doPosition = () => {
 
     const x = tag.x + centerX - el.offsetWidth / 2;
     const y = tag.y + centerY - el.offsetHeight / 2;
-    el.style.transform = `translate(${x}px, ${y}px)`;
-    el.style.fontSize = `${Math.ceil(12 * tag.scale + 8)}px`;
-    el.style.opacity = Math.max(0.3, tag.alpha);
+    el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    el.style.fontSize = `${Math.round(10 + 5 * tag.scale)}px`;
+    el.style.opacity = Math.min(1, Math.max(0.34, tag.alpha));
   }
 };
 
 // 深度排序
 const depthSort = () => {
-  const tags = Array.from(oA);
-  tags.sort((a, b) => {
-    const az = mcList.value[tags.indexOf(a)].cz;
-    const bz = mcList.value[tags.indexOf(b)].cz;
-    return bz - az;
+  if (!oA) return;
+
+  const tags = Array.from(oA).map((el, index) => ({
+    el,
+    z: mcList.value[index]?.cz ?? 0
+  }));
+
+  tags.sort((a, b) => b.z - a.z);
+  tags.forEach(({ el }, i) => {
+    el.style.zIndex = i;
   });
-  tags.forEach((el, i) => el.style.zIndex = i);
+
+  if (hoveredIndex.value > -1 && oA[hoveredIndex.value]) {
+    oA[hoveredIndex.value].style.zIndex = tags.length + 1;
+  }
+};
+
+const pauseCloud = () => {
+  state.isPaused = true;
+  state.lasta = 0;
+  state.lastb = 0;
+};
+
+const resumeCloud = () => {
+  state.isPaused = false;
+};
+
+const handleTagEnter = (index) => {
+  hoveredIndex.value = index;
+  pauseCloud();
+  depthSort();
+};
+
+const handleTagLeave = () => {
+  hoveredIndex.value = -1;
+  resumeCloud();
+  depthSort();
 };
 
 // 模拟数据
@@ -171,13 +209,18 @@ const query = () => {
     { name: '标签16', url: '#' },{ name: '标签17', url: '#' }
   ];
 
-  const muted =
-    typeof document !== 'undefined'
-      ? getComputedStyle(document.documentElement).getPropertyValue('--app-text-muted').trim() ||
-        '#64748b'
-      : '#64748b'
-  tagListOrg.forEach((item) => {
-    item.color = muted
+  const palette = [
+    '#2563eb',
+    '#0f766e',
+    '#b45309',
+    '#be123c',
+    '#7c3aed',
+    '#0e7490',
+    '#64748b'
+  ];
+
+  tagListOrg.forEach((item, index) => {
+    item.color = palette[index % palette.length]
   })
 
   tagList.value = tagListOrg;
@@ -189,6 +232,7 @@ const onReady = async () => {
   await nextTick();
   oList = tagcloudall.value;
   oA = oList.getElementsByTagName('a');
+  state.radius = Math.min(oList.offsetWidth, oList.offsetHeight) * 0.38;
 
   mcList.value = [];
   for (let i = 0; i < oA.length; i++) {
@@ -199,16 +243,17 @@ const onReady = async () => {
   }
 
   sineCosine(0, 0, 0);
-  positionAll();
+  await positionAll();
 
-  // 鼠标事件
-  oList.onmouseenter = () => state.active = true;
-  oList.onmouseleave = () => state.active = false;
-  oList.onmousemove = (e) => {
-    const rect = oList.getBoundingClientRect();
-    state.mouseX = e.clientX - rect.left - rect.width / 2;
-    state.mouseY = e.clientY - rect.top - rect.height / 2;
-  };
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      if (!oList) return;
+      state.radius = Math.min(oList.offsetWidth, oList.offsetHeight) * 0.38;
+      doPosition();
+      depthSort();
+    });
+    resizeObserver.observe(oList);
+  }
 
   // 启动流畅动画
   animationFrame = requestAnimationFrame(update);
@@ -221,6 +266,7 @@ onMounted(() => {
 // 销毁动画
 onUnmounted(() => {
   cancelAnimationFrame(animationFrame);
+  resizeObserver?.disconnect();
 });
 </script>
 
@@ -228,21 +274,114 @@ onUnmounted(() => {
 .tagcloud-all {
   width: 100%;
   max-width: 250px;
-  height: 240px;
+  aspect-ratio: 1;
   margin: 0 auto;
   position: relative;
+  overflow: hidden;
   background: var(--app-surface-muted);
   border: 1px solid var(--blog-card-border);
-  cursor: pointer;
+  border-radius: 50%;
+  cursor: default;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+  isolation: isolate;
 }
+
+.tagcloud-all::before {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 1px dashed rgba(100, 116, 139, 0.22);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tagcloud-all::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--blog-link);
+  border-radius: 50%;
+  opacity: 0.22;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .tagcloud-all a {
   position: absolute;
+  top: 0;
+  left: 0;
   font-weight: 400;
   text-decoration: none;
-  transition: color 0.2s ease;
+  color: var(--tag-color, var(--app-text-muted));
+  outline: none;
+  transform-origin: center;
+  will-change: transform, opacity;
 }
-.tagcloud-all a:hover {
-  color: var(--app-danger) !important;
-  font-weight: bold;
+
+.tagcloud-all a span {
+  display: inline-flex;
+  align-items: center;
+  max-width: 112px;
+  min-height: 22px;
+  padding: 3px 9px;
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  transform: translateZ(0) scale(1);
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.tagcloud-all.is-paused a span {
+  transition-duration: 0.14s;
+}
+
+.tagcloud-all a:hover span,
+.tagcloud-all a:focus-visible span,
+.tagcloud-all a.is-hovered span {
+  color: #ffffff;
+  background: var(--blog-link);
+  border-color: var(--blog-link);
+  box-shadow: 0 8px 18px rgba(43, 108, 176, 0.2);
+  transform: translateZ(0) scale(1.14);
+}
+
+.tagcloud-all a:focus-visible span {
+  outline: 2px solid rgba(43, 108, 176, 0.32);
+  outline-offset: 2px;
+}
+
+:global(html.dark) .tagcloud-all {
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+}
+
+:global(html.dark) .tagcloud-all::before {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+:global(html.dark) .tagcloud-all a span {
+  background: rgba(30, 33, 38, 0.86);
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+:global(html.dark) .tagcloud-all a:hover span,
+:global(html.dark) .tagcloud-all a:focus-visible span,
+:global(html.dark) .tagcloud-all a.is-hovered span {
+  color: #0f172a;
+  background: var(--blog-link-hover);
+  border-color: var(--blog-link-hover);
 }
 </style>

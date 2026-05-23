@@ -1,7 +1,7 @@
 <template>
   <div class="page-banner">
     <div class="page-banner-inner">
-      <h1 class="page-title">说说</h1>
+      <h1 class="page-title">朋友圈</h1>
       <p class="page-sub">已在本站留下了若干条小吐槽</p>
     </div>
   </div>

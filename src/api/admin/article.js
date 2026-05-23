@@ -92,16 +92,19 @@ export function buildArticlePayload(form) {
     type: form.type,
     status: form.status,
     visibility: form.visibility,
-    // 结构化正文，MySQL 建议 JSON 列存储
+    // 富文本 HTML 可直接用于博客详情页渲染，MySQL 建议 longtext。
+    contentHtml: form.contentHtml ?? '',
+    // 纯文本便于搜索、摘要回退、后端缓存索引。
+    contentText: form.contentText ?? '',
+    // 结构化正文，MySQL 建议 JSON 列存储。
     contentBlocks: form.contentBlocks ?? [],
-    // 可选：后端渲染 HTML 后回写
-    contentHtml: form.contentHtml ?? null,
   }
 }
 
 /** 从后端 VO 还原编辑器表单 */
 export function normalizeArticleDetail(raw) {
   const data = raw?.data ?? raw ?? {}
+  const contentBlocks = parseContentBlocks(data)
   return {
     id: data.id ?? null,
     title: data.title ?? '',
@@ -112,8 +115,24 @@ export function normalizeArticleDetail(raw) {
     type: data.type ?? 'article',
     status: data.status ?? 0,
     visibility: data.visibility ?? 0,
-    contentBlocks: parseContentBlocks(data),
+    contentHtml: resolveContentHtml(data) || blocksToHtml(contentBlocks),
+    contentText: data.contentText ?? '',
+    contentBlocks,
   }
+}
+
+function resolveContentHtml(data) {
+  if (typeof data.contentHtml === 'string') return data.contentHtml
+  if (typeof data.html === 'string') return data.html
+  if (typeof data.content === 'string') {
+    try {
+      const parsed = JSON.parse(data.content)
+      if (Array.isArray(parsed)) return ''
+    } catch {
+      return data.content
+    }
+  }
+  return ''
 }
 
 function parseContentBlocks(data) {
@@ -129,4 +148,51 @@ function parseContentBlocks(data) {
     }
   }
   return [{ id: 'empty_p', type: 'paragraph', content: '' }]
+}
+
+function blocksToHtml(blocks = []) {
+  return blocks
+    .map((block) => {
+      if (block.type === 'heading') {
+        const level = [2, 3, 4].includes(Number(block.level)) ? Number(block.level) : 2
+        return `<h${level}>${escapeHtml(block.content ?? '')}</h${level}>`
+      }
+      if (block.type === 'quote') {
+        return `<blockquote>${escapeHtml(block.content ?? '')}</blockquote>`
+      }
+      if (block.type === 'image' && block.url) {
+        return [
+          '<figure class="article-image">',
+          `<img src="${escapeAttribute(block.url)}" alt="${escapeAttribute(block.alt ?? '')}">`,
+          block.caption ? `<figcaption>${escapeHtml(block.caption)}</figcaption>` : '',
+          '</figure>',
+        ].join('')
+      }
+      if (block.type === 'code') {
+        const language = block.language || 'plaintext'
+        return [
+          `<pre class="article-code" data-language="${escapeAttribute(language)}" data-filename="${escapeAttribute(block.filename ?? '')}">`,
+          `<code class="language-${escapeAttribute(language)}">${escapeHtml(block.content ?? '')}</code>`,
+          '</pre>',
+        ].join('')
+      }
+      if (block.type === 'richText') {
+        return block.content ?? ''
+      }
+      return `<p>${escapeHtml(block.content ?? '')}</p>`
+    })
+    .join('')
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;')
 }

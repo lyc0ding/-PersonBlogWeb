@@ -1,54 +1,21 @@
 <template>
-  <div class="article-preview">
+  <article class="article-preview">
     <header class="preview-header">
-      <p class="preview-type">{{ form.type === 'shuoshuo' ? '说说' : '文章' }}</p>
+      <p class="preview-type">{{ form.type === ARTICLE_TYPE.SHUOSHUO ? '朋友圈' : '文章' }}</p>
       <h1>{{ form.title || '未命名文章' }}</h1>
-      <ul v-if="form.summary" class="preview-summary">
-        <li>{{ form.summary }}</li>
-      </ul>
+      <p v-if="form.summary" class="summary">{{ form.summary }}</p>
     </header>
 
-    <div v-if="form.coverUrl" class="preview-cover">
-      <img :src="form.coverUrl" alt="封面">
-    </div>
+    <img v-if="form.coverUrl" :src="form.coverUrl" alt="文章封面" class="cover">
 
-    <article class="preview-body">
-      <template v-for="block in form.contentBlocks" :key="block.id">
-        <h2 v-if="block.type === 'heading' && (block.level === 2 || !block.level)" class="heading">
-          {{ block.content }}
-        </h2>
-        <h3 v-else-if="block.type === 'heading' && block.level === 3" class="heading">
-          {{ block.content }}
-        </h3>
-        <h4 v-else-if="block.type === 'heading'" class="heading">
-          {{ block.content }}
-        </h4>
-
-        <p v-else-if="block.type === 'paragraph'" class="paragraph">
-          {{ block.content }}
-        </p>
-
-        <blockquote v-else-if="block.type === 'quote'" class="quote">
-          {{ block.content }}
-        </blockquote>
-
-        <figure v-else-if="block.type === 'image' && block.url" class="figure">
-          <img :src="block.url" :alt="block.alt">
-          <figcaption v-if="block.caption">{{ block.caption }}</figcaption>
-        </figure>
-
-        <div v-else-if="block.type === 'code'" class="code-preview">
-          <div class="code-head">
-            <span>{{ block.filename || block.language || 'code' }}</span>
-          </div>
-          <pre><code>{{ block.content }}</code></pre>
-        </div>
-      </template>
-    </article>
-  </div>
+    <section v-if="form.contentHtml" class="preview-body" v-html="form.contentHtml" />
+    <el-empty v-else description="还没有正文内容" />
+  </article>
 </template>
 
 <script setup>
+import { ARTICLE_TYPE } from '@/constants/article'
+
 defineProps({
   form: { type: Object, required: true },
 })
@@ -56,104 +23,96 @@ defineProps({
 
 <style scoped>
 .article-preview {
-  padding: 20px;
+  min-height: 560px;
+  padding: 26px;
   background: var(--app-surface);
   border: 1px solid var(--app-border);
   border-radius: 8px;
-  min-height: 400px;
+}
+
+.preview-header {
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--app-divider-subtle);
 }
 
 .preview-type {
   margin: 0 0 6px;
-  font-size: 12px;
   color: var(--app-text-muted);
+  font-size: 12px;
   letter-spacing: 0.08em;
 }
 
 .preview-header h1 {
-  margin: 0 0 12px;
-  font-size: 1.6rem;
-  line-height: 1.4;
+  margin: 0 0 10px;
   color: var(--app-text-primary);
+  font-size: 28px;
+  line-height: 1.35;
 }
 
-.preview-summary {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 16px;
-  font-size: 14px;
+.summary {
+  margin: 0 0 18px;
   color: var(--app-text-secondary);
 }
 
-.preview-cover img {
+.cover {
   width: 100%;
-  max-height: 280px;
+  max-height: 340px;
   object-fit: cover;
   border-radius: 6px;
   margin-bottom: 20px;
 }
 
 .preview-body {
-  font-size: 15px;
+  color: var(--app-text-secondary);
+  font-size: 16px;
   line-height: 1.85;
-  color: var(--app-text-secondary);
 }
 
-.heading {
-  margin: 1.2em 0 0.6em;
+.preview-body :deep(p) {
+  margin: 0 0 1em;
+}
+
+.preview-body :deep(h2),
+.preview-body :deep(h3),
+.preview-body :deep(h4) {
+  margin: 1.4em 0 0.7em;
   color: var(--app-text-primary);
+  line-height: 1.45;
 }
 
-.paragraph {
-  margin: 0 0 1em;
-  white-space: pre-wrap;
-}
-
-.quote {
-  margin: 0 0 1em;
+.preview-body :deep(blockquote) {
+  margin: 1em 0;
   padding: 10px 14px;
-  border-left: 4px solid var(--el-color-primary);
+  border-left: 4px solid var(--blog-link);
   background: var(--app-surface-muted);
-  color: var(--app-text-secondary);
 }
 
-.figure {
-  margin: 0 0 1.2em;
+.preview-body :deep(figure.article-image) {
+  margin: 18px 0;
 }
 
-.figure img {
+.preview-body :deep(figure.article-image img) {
   max-width: 100%;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
-.figure figcaption {
-  margin-top: 6px;
-  font-size: 13px;
+.preview-body :deep(figcaption),
+.preview-body :deep(.code-caption) {
+  margin-top: 8px;
   color: var(--app-text-muted);
+  font-size: 13px;
   text-align: center;
 }
 
-.code-preview {
-  margin: 0 0 1.2em;
+.preview-body :deep(pre.article-code) {
+  margin: 16px 0 6px;
+  padding: 14px;
   border-radius: 6px;
-  overflow: hidden;
-  background: #282c34;
-  color: #abb2bf;
-}
-
-.code-head {
-  padding: 6px 12px;
-  font-size: 12px;
-  background: #21252b;
-  border-bottom: 1px solid #3e4451;
-}
-
-.code-preview pre {
-  margin: 0;
-  padding: 12px;
   overflow: auto;
-  font-family: Consolas, monospace;
+  background: #282c34;
+  color: #f8fafc;
+  font-family: Consolas, "Courier New", monospace;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 </style>

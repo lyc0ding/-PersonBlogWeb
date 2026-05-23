@@ -1,16 +1,13 @@
 <template>
-  <div class="meta-panel">
+  <aside class="meta-panel">
     <el-scrollbar>
-      <el-form :model="form" label-position="top" size="default">
+      <el-form :model="form" label-position="top">
         <el-form-item label="文章标题" required>
-          <el-input v-model="form.title" placeholder="请输入标题" maxlength="120" show-word-limit />
+          <el-input v-model="form.title" maxlength="120" show-word-limit placeholder="请输入文章标题" />
         </el-form-item>
 
         <el-form-item label="文章类型">
-          <el-radio-group v-model="form.type">
-            <el-radio :value="ARTICLE_TYPE.ARTICLE">文章</el-radio>
-            <el-radio :value="ARTICLE_TYPE.SHUOSHUO">说说</el-radio>
-          </el-radio-group>
+          <el-segmented v-model="form.type" :options="typeOptions" />
         </el-form-item>
 
         <el-form-item label="文章标签">
@@ -21,15 +18,10 @@
             collapse-tags
             collapse-tags-tooltip
             placeholder="选择标签"
-            style="width: 100%"
             :loading="tagLoading"
+            class="full-width"
           >
-            <el-option
-              v-for="tag in tagOptions"
-              :key="tag.id"
-              :label="tag.name"
-              :value="tag.id"
-            />
+            <el-option v-for="tag in tagOptions" :key="tag.id" :label="tag.name" :value="tag.id" />
           </el-select>
         </el-form-item>
 
@@ -37,7 +29,8 @@
           <ImageUploader
             v-model="form.coverUrl"
             biz-type="cover"
-            hint="建议 16:9，最大 5MB；留空则使用正文首图"
+            :max-size-m-b="5"
+            hint="建议 16:9；后端接口未就绪时会使用本地预览"
           />
         </el-form-item>
 
@@ -48,20 +41,23 @@
             :rows="4"
             maxlength="300"
             show-word-limit
-            placeholder="列表页展示的简短介绍"
+            placeholder="列表页展示的摘要；留空时后端可从 contentText 截取"
           />
         </el-form-item>
 
         <el-form-item label="可见范围">
           <el-radio-group v-model="form.visibility">
-            <el-radio
-              v-for="(label, key) in ARTICLE_VISIBILITY_LABEL"
-              :key="key"
-              :value="Number(key)"
-            >
-              {{ label }}
+            <el-radio v-for="option in visibilityOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
             </el-radio>
           </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="缓存与入库建议">
+          <div class="cache-note">
+            <span>MySQL: `content_html` + `content_blocks` JSON</span>
+            <span>Redis: 文章详情缓存 key 可使用 `article:{id}`</span>
+          </div>
         </el-form-item>
 
         <el-form-item label="统计">
@@ -77,17 +73,17 @@
         <el-button type="primary" :loading="saving" @click="$emit('publish')">发布文章</el-button>
       </div>
     </el-scrollbar>
-  </div>
+  </aside>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   ARTICLE_TYPE,
   ARTICLE_VISIBILITY_LABEL,
 } from '@/constants/article'
 import { tagListService } from '@/api/admin/tag'
-import ImageUploader from '@/components/Image/ImageUploader.vue'
+import ImageUploader from '@/components/image/ImageUploader.vue'
 
 defineProps({
   form: { type: Object, required: true },
@@ -101,6 +97,18 @@ defineEmits(['save-draft', 'publish'])
 const tagLoading = ref(false)
 const tagOptions = ref([])
 
+const typeOptions = [
+  { label: '文章', value: ARTICLE_TYPE.ARTICLE },
+  { label: '朋友圈', value: ARTICLE_TYPE.SHUOSHUO },
+]
+
+const visibilityOptions = computed(() =>
+  Object.entries(ARTICLE_VISIBILITY_LABEL).map(([value, label]) => ({
+    value: Number(value),
+    label,
+  }))
+)
+
 function formatTime(iso) {
   if (!iso) return ''
   try {
@@ -108,6 +116,14 @@ function formatTime(iso) {
   } catch {
     return iso
   }
+}
+
+function flattenTags(list, acc = []) {
+  list.forEach((item) => {
+    acc.push({ id: item.id, name: item.name })
+    if (Array.isArray(item.children) && item.children.length) flattenTags(item.children, acc)
+  })
+  return acc
 }
 
 async function loadTags() {
@@ -118,22 +134,14 @@ async function loadTags() {
     tagOptions.value = flattenTags(Array.isArray(list) ? list : [])
   } catch {
     tagOptions.value = [
-      { id: 1, name: '建站' },
-      { id: 2, name: '生活' },
-      { id: 3, name: '嵌入式' },
-      { id: 4, name: '项目' },
+      { id: 1, name: 'Java' },
+      { id: 2, name: 'Spring Boot' },
+      { id: 3, name: 'MySQL' },
+      { id: 4, name: '生活' },
     ]
   } finally {
     tagLoading.value = false
   }
-}
-
-function flattenTags(list, acc = []) {
-  list.forEach((item) => {
-    acc.push({ id: item.id, name: item.name })
-    if (item.children?.length) flattenTags(item.children, acc)
-  })
-  return acc
 }
 
 onMounted(loadTags)
@@ -142,26 +150,32 @@ onMounted(loadTags)
 <style scoped>
 .meta-panel {
   height: 100%;
+  padding: 16px;
   background: var(--app-surface);
   border: 1px solid var(--app-border);
   border-radius: 8px;
-  padding: 16px;
 }
 
+.full-width {
+  width: 100%;
+}
+
+.cache-note,
 .stats {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 13px;
   color: var(--app-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 8px;
-  margin-top: 8px;
+  padding-top: 12px;
+  margin-top: 6px;
   border-top: 1px solid var(--app-divider-subtle);
 }
 </style>
