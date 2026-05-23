@@ -37,7 +37,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import PaginateVue from '@/components/Pagination/Paginate.vue'
+import Paginate from '@/components/agination/Paginate.vue'
 
 const route = useRoute()
 

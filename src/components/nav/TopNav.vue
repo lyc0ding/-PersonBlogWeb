@@ -3,7 +3,7 @@
     <div class="nav-inner">
       <div class="nav-brand">
         <router-link to="/" class="site-name" @click="blurTarget">Lycoding</router-link>
-        <p class="site-tagline">Move it . Life for you .</p>
+        <p class="site-tagline">Move It . Live For Youself .</p>
       </div>
 
       <div class="nav-toolbar">
@@ -35,16 +35,6 @@
       </div>
 
       <div class="nav-actions">
-        <button
-          type="button"
-          class="theme-toggle"
-          :title="themeStore.isDark ? '切换为浅色' : '切换为深色'"
-          :aria-label="themeStore.isDark ? '切换为浅色模式' : '切换为深色模式'"
-          @click="themeStore.toggle()"
-        >
-          <i class="iconfont" :class="themeStore.isDark ? 'icon-wanshang' : 'icon-qingbaitian'" />
-        </button>
-
         <div class="dropdown-wrapper" @mouseenter="showDropdown" @mouseleave="hideDropdown">
           <i class="iconfont icon-gengduo dropdown-trigger" aria-hidden="true" />
           <transition name="fade">
@@ -64,10 +54,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useThemeStore } from '@/stores/themeStore'
 
 const router = useRouter()
-const themeStore = useThemeStore()
 
 const navItems = [
   { label: '首页', path: '/' },

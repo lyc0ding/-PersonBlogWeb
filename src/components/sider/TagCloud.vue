@@ -24,7 +24,6 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick, onUnmounted } from 'vue';
 
-// 响应式数据
 const tagList = ref([]);
 const mcList = ref([]);
 const tagcloudall = ref(null);
@@ -32,13 +31,13 @@ const hoveredIndex = ref(-1);
 
 const state = reactive({
   radius: 96,
-  d: 350,
+  d: 420,         // 加大景深，更柔和
   isPaused: false,
   lasta: 0,
   lastb: 0,
   distr: true,
-  speed: 0.62,
-  autoRotateSpeed: 0.18,
+  speed: 0.7,     // 更顺滑
+  autoRotateSpeed: 0.13,
   howElliptical: 1,
   sa: 0, ca: 0, sb: 0, cb: 0, sc: 0, cc: 0
 });
@@ -48,7 +47,6 @@ let oA = null;
 let animationFrame = null;
 let resizeObserver = null;
 
-// 三角函数计算
 const sineCosine = (a, b, c) => {
   state.sa = Math.sin(a);
   state.ca = Math.cos(a);
@@ -58,14 +56,12 @@ const sineCosine = (a, b, c) => {
   state.cc = Math.cos(c);
 };
 
-// 初始定位
 const positionAll = async () => {
   await nextTick();
   let phi = 0;
   let theta = 0;
   const max = mcList.value.length;
 
-  // 均匀球体分布算法
   for (let i = 0; i < max; i++) {
     if (state.distr) {
       phi = Math.acos(-1 + (2 * i + 1) / max);
@@ -84,13 +80,9 @@ const positionAll = async () => {
   depthSort();
 };
 
-// 平滑更新坐标（核心优化）
+// ✅ 核心优化：平滑动画
 const update = () => {
   if (state.isPaused) {
-    state.lasta = 0;
-    state.lastb = 0;
-    doPosition();
-    depthSort();
     animationFrame = requestAnimationFrame(update);
     return;
   }
@@ -98,46 +90,46 @@ const update = () => {
   const a = state.autoRotateSpeed * 0.01;
   const b = state.autoRotateSpeed * 0.015;
 
-  // 缓动平滑算法（让旋转丝滑不抖动）
+  // 超丝滑缓动
   state.lasta = state.lasta * state.speed + a * (1 - state.speed);
   state.lastb = state.lastb * state.speed + b * (1 - state.speed);
 
   sineCosine(state.lasta, state.lastb, 0);
 
-  // 3D坐标变换
   for (let j = 0; j < mcList.value.length; j++) {
-    const cx = mcList.value[j].cx;
-    const cy = mcList.value[j].cy;
-    const cz = mcList.value[j].cz;
+    const { cx, cy, cz } = mcList.value[j];
 
-    // X 轴旋转
-    let ry1 = cy * state.ca + cz * -state.sa;
-    let rz1 = cy * state.sa + cz * state.ca;
-
-    // Y 轴旋转
-    let rx2 = cx * state.cb + rz1 * state.sb;
-    let rz2 = cx * -state.sb + rz1 * state.cb;
+    // 旋转计算
+    const ry1 = cy * state.ca + cz * -state.sa;
+    const rz1 = cy * state.sa + cz * state.ca;
+    const rx2 = cx * state.cb + rz1 * state.sb;
+    const rz2 = cx * -state.sb + rz1 * state.cb;
 
     mcList.value[j].cx = rx2;
     mcList.value[j].cy = ry1;
     mcList.value[j].cz = rz2;
 
-    // 透视计算
-    const per = state.d / (state.d + rz2);
+    // ✅ 平滑透视（不会突变）
+    const per = state.d / (state.d + Math.max(-state.radius * 0.8, rz2));
+
+    // ✅ 平滑大小：最小缩到 0.6，不会扁成一条线
+    mcList.value[j].scale = 0.6 + (per - 0.7) * 1.2;
+    mcList.value[j].scale = Math.min(1.2, Math.max(0.6, mcList.value[j].scale));
+
+    // ✅ 平滑透明度：背面不会突然消失
+    mcList.value[j].alpha = 0.4 + (per - 0.7) * 1.8;
+    mcList.value[j].alpha = Math.min(1, Math.max(0.4, mcList.value[j].alpha));
+
     mcList.value[j].x = state.howElliptical * rx2 * per;
     mcList.value[j].y = ry1 * per;
-    mcList.value[j].scale = per;
-    mcList.value[j].alpha = (per - 0.6) * 2;
   }
 
   doPosition();
   depthSort();
-
-  // 持续流畅动画
   animationFrame = requestAnimationFrame(update);
 };
 
-// 更新标签位置与样式
+// ✅ 统一更新：transform + opacity + scale 全部走 transform，更流畅
 const doPosition = () => {
   if (!oList || !oA) return;
 
@@ -151,19 +143,19 @@ const doPosition = () => {
 
     const x = tag.x + centerX - el.offsetWidth / 2;
     const y = tag.y + centerY - el.offsetHeight / 2;
-    el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    el.style.fontSize = `${Math.round(10 + 5 * tag.scale)}px`;
-    el.style.opacity = Math.min(1, Math.max(0.34, tag.alpha));
+
+    // ✅ 流畅关键：大小、位置、层级全部走 transform
+    el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${tag.scale})`;
+    el.style.opacity = tag.alpha;
   }
 };
 
-// 深度排序
 const depthSort = () => {
   if (!oA) return;
 
   const tags = Array.from(oA).map((el, index) => ({
     el,
-    z: mcList.value[index]?.cz ?? 0
+    z: mcList.value[index]?.cz ?? -9999
   }));
 
   tags.sort((a, b) => b.z - a.z);
@@ -178,10 +170,7 @@ const depthSort = () => {
 
 const pauseCloud = () => {
   state.isPaused = true;
-  state.lasta = 0;
-  state.lastb = 0;
 };
-
 const resumeCloud = () => {
   state.isPaused = false;
 };
@@ -191,14 +180,12 @@ const handleTagEnter = (index) => {
   pauseCloud();
   depthSort();
 };
-
 const handleTagLeave = () => {
   hoveredIndex.value = -1;
   resumeCloud();
   depthSort();
 };
 
-// 模拟数据
 const query = () => {
   let tagListOrg = [
     { name: '标签1', url: '#' },{ name: '标签2', url: '#' },{ name: '标签3', url: '#' },
@@ -209,16 +196,7 @@ const query = () => {
     { name: '标签16', url: '#' },{ name: '标签17', url: '#' }
   ];
 
-  const palette = [
-    '#2563eb',
-    '#0f766e',
-    '#b45309',
-    '#be123c',
-    '#7c3aed',
-    '#0e7490',
-    '#64748b'
-  ];
-
+  const palette = ['#2563eb','#0f766e','#b45309','#be123c','#7c3aed','#0e7490','#64748b'];
   tagListOrg.forEach((item, index) => {
     item.color = palette[index % palette.length]
   })
@@ -227,7 +205,6 @@ const query = () => {
   onReady();
 };
 
-// 初始化
 const onReady = async () => {
   await nextTick();
   oList = tagcloudall.value;
@@ -236,10 +213,7 @@ const onReady = async () => {
 
   mcList.value = [];
   for (let i = 0; i < oA.length; i++) {
-    mcList.value.push({
-      cx: 0, cy: 0, cz: 0,
-      x: 0, y: 0, scale: 1, alpha: 1
-    });
+    mcList.value.push({ cx: 0, cy: 0, cz: 0, x: 0, y: 0, scale: 1, alpha: 1 });
   }
 
   sineCosine(0, 0, 0);
@@ -247,7 +221,6 @@ const onReady = async () => {
 
   if (typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
-      if (!oList) return;
       state.radius = Math.min(oList.offsetWidth, oList.offsetHeight) * 0.38;
       doPosition();
       depthSort();
@@ -255,7 +228,6 @@ const onReady = async () => {
     resizeObserver.observe(oList);
   }
 
-  // 启动流畅动画
   animationFrame = requestAnimationFrame(update);
 };
 
@@ -263,7 +235,6 @@ onMounted(() => {
   query();
 });
 
-// 销毁动画
 onUnmounted(() => {
   cancelAnimationFrame(animationFrame);
   resizeObserver?.disconnect();
@@ -277,12 +248,12 @@ onUnmounted(() => {
   aspect-ratio: 1;
   margin: 0 auto;
   position: relative;
-  overflow: hidden;
-  background: var(--app-surface-muted);
-  border: 1px solid var(--blog-card-border);
+  /* overflow: hidden; */
+  /* background: var(--app-surface-muted); */
+  /* border: 1px solid var(--blog-card-border); */
   border-radius: 50%;
   cursor: default;
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+  /* box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08); */
   isolation: isolate;
 }
 
@@ -290,7 +261,7 @@ onUnmounted(() => {
   content: '';
   position: absolute;
   inset: 16px;
-  border: 1px dashed rgba(100, 116, 139, 0.22);
+  /* border: 1px dashed rgba(100, 116, 139, 0.22); */
   border-radius: inherit;
   pointer-events: none;
 }
@@ -319,6 +290,8 @@ onUnmounted(() => {
   outline: none;
   transform-origin: center;
   will-change: transform, opacity;
+  /* ✅ 流畅关键：开启过渡 */
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out, z-index 0.1s;
 }
 
 .tagcloud-all a span {
@@ -327,21 +300,15 @@ onUnmounted(() => {
   max-width: 112px;
   min-height: 22px;
   padding: 3px 9px;
-  overflow: hidden;
+  /* overflow: hidden; */
   color: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
   background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  /* border: 1px solid rgba(148, 163, 184, 0.22); */
   border-radius: 999px;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
-  transform: translateZ(0) scale(1);
-  transition:
-    color 0.18s ease,
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease;
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .tagcloud-all.is-paused a span {
@@ -355,7 +322,7 @@ onUnmounted(() => {
   background: var(--blog-link);
   border-color: var(--blog-link);
   box-shadow: 0 8px 18px rgba(43, 108, 176, 0.2);
-  transform: translateZ(0) scale(1.14);
+  transform: scale(1.14);
 }
 
 .tagcloud-all a:focus-visible span {
@@ -366,17 +333,14 @@ onUnmounted(() => {
 :global(html.dark) .tagcloud-all {
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
 }
-
 :global(html.dark) .tagcloud-all::before {
   border-color: rgba(148, 163, 184, 0.18);
 }
-
 :global(html.dark) .tagcloud-all a span {
   background: rgba(30, 33, 38, 0.86);
   border-color: rgba(148, 163, 184, 0.2);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
 }
-
 :global(html.dark) .tagcloud-all a:hover span,
 :global(html.dark) .tagcloud-all a:focus-visible span,
 :global(html.dark) .tagcloud-all a.is-hovered span {

@@ -9,7 +9,7 @@
       <aside class="blog-aside">
         <Introduction />
         <section class="widget">
-          <h3 class="widget-title">分类</h3>
+          <h3 class="widget-title">标签云</h3>
           <TagCloud />
         </section>
       </aside>
