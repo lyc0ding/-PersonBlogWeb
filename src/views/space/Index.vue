@@ -12,8 +12,9 @@
 </template>
 
 <style lang="scss" scoped>
-    #space-container{
-    width: 100%;
+#space-container{
+    width: var(--blog-content-width);
     height: 100%;
-    }
+    margin: 0 auto;
+}
 </style>

@@ -8,21 +8,41 @@
 
     <div class="space-layout">
       <main class="moment-feed" aria-label="朋友圈动态">
+        <div class="feed-head">
+          <div>
+            <h2>朋友圈</h2>
+            <p>近期动态、图片和碎片记录</p>
+          </div>
+          <el-button :loading="loading" @click="loadMoments">刷新</el-button>
+        </div>
+
+        <el-alert
+          v-if="error"
+          :title="error"
+          type="error"
+          show-icon
+          :closable="false"
+        />
+
+        <el-skeleton v-if="loading && !moments.length" :rows="6" animated />
+        <el-empty v-else-if="!moments.length" description="暂无动态" />
+
         <article
           v-for="item in moments"
+          v-else
           :key="item.id"
           class="moment-card"
         >
           <div class="moment-panel">
             <header class="moment-head">
               <div>
-                <p class="moment-kind">{{ item.type }}</p>
-                <h2 class="moment-title">{{ item.title }}</h2>
+                <p class="moment-kind">动态</p>
+                <h2 class="moment-title">{{ item.title || '无标题动态' }}</h2>
               </div>
-              <time class="moment-date" :datetime="item.datetime">{{ item.date }}</time>
+              <time class="moment-date" :datetime="item.createTime">{{ formatDate(item.createTime) }}</time>
             </header>
 
-            <p class="moment-text">{{ item.text }}</p>
+            <p class="moment-text">{{ item.content }}</p>
 
             <div
               class="moment-gallery"
@@ -30,12 +50,12 @@
             >
               <button
                 v-for="(src, index) in item.images"
-                :key="src"
+                :key="`${item.id}_${src}`"
                 type="button"
                 class="gallery-item"
                 @click="openImagePreview(src)"
               >
-                <img :src="src" :alt="`${item.title} 图片 ${index + 1}`" loading="lazy">
+                <img :src="src" :alt="`${item.title || '动态'} 图片 ${index + 1}`" loading="lazy">
               </button>
               <div v-if="!item.images?.length" class="gallery-empty">
                 <span>纯文字动态</span>
@@ -44,71 +64,66 @@
 
             <footer class="moment-foot">
               <div class="moment-tags">
-                <span v-for="tag in item.tags" :key="tag"># {{ tag }}</span>
+                <span># 朋友圈</span>
               </div>
               <div class="moment-stats">
-                <span><i class="iconfont icon-hot" /> {{ item.hot }}</span>
-                <span><i class="iconfont icon-comments" /> {{ item.comments }} 留言</span>
+                <span><i class="iconfont icon-hot" /> {{ item.status === 1 ? '展示中' : '隐藏' }}</span>
               </div>
             </footer>
           </div>
         </article>
+
+        <div class="pager-wrap">
+          <el-pagination
+            v-model:current-page="query.pageNum"
+            v-model:page-size="query.pageSize"
+            background
+            layout="total, prev, pager, next"
+            :total="total"
+            @current-change="loadMoments"
+          />
+        </div>
       </main>
 
       <aside class="space-side">
         <PersonBox />
       </aside>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import PersonBox from '../../components/sider/Introduction.vue'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
+import { timelinePageService } from '@/api/timeline'
 
-const moments = ref([
-  {
-    id: 1,
-    type: '日常',
-    title: '把今天过成一个小版本',
-    date: '2026.05.18 22:18',
-    datetime: '2026-05-18T22:18:00',
-    day: '18',
-    text: '下午把博客的几个交互细节收了一下，晚上顺手整理桌面。生活和代码一样，先把能看见的地方理顺，剩下的问题就会变得清楚。',
-    images: ['/img/bac1.jpg', '/img/bac2.jpg', '/static/images/nickname.png'],
-    tags: ['博客', '前端', '记录'],
-    hot: '3.7k',
-    comments: 45,
-  },
-  {
-    id: 2,
-    type: '碎碎念',
-    title: '诈尸一下',
-    date: '2026.04.27 21:53',
-    datetime: '2026-04-27T21:53:00',
-    day: '27',
-    text: '时间过得太快了，很多事刚开始觉得很远，回头看已经是很久以前。最近想少一点无效焦虑，多做一点能留下来的东西。',
-    images: ['/img/neymar.jpg'],
-    tags: ['生活', '复盘'],
-    hot: '1.2k',
-    comments: 13,
-  },
-  {
-    id: 3,
-    type: '学习',
-    title: '一次嵌入式环境整理',
-    date: '2026.04.13 16:40',
-    datetime: '2026-04-13T16:40:00',
-    day: '13',
-    text: '把旧开发板的 U-Boot、内核和根文件系统笔记重新梳了一遍。很多步骤以前只是跑通，现在再写下来，才发现真正有价值的是可复现的过程。',
-    images: ['/img/bac2.jpg', '/img/bac1.jpg'],
-    tags: ['嵌入式', 'Linux', '笔记'],
-    hot: '980',
-    comments: 8,
-  },
-])
+const loading = ref(false)
+const error = ref('')
+const moments = ref([])
+const total = ref(0)
+
+const query = reactive({
+  pageNum: 1,
+  pageSize: 6,
+})
+
+async function loadMoments() {
+  loading.value = true
+  error.value = ''
+  try {
+    const res = await timelinePageService({ ...query })
+    const page = res?.data ?? res ?? {}
+    moments.value = page.records ?? page.list ?? []
+    total.value = page.total ?? moments.value.length
+  } catch (err) {
+    moments.value = []
+    total.value = 0
+    error.value = err?.message || '朋友圈动态加载失败，请确认后端 `/timeline/page` 可访问。'
+  } finally {
+    loading.value = false
+  }
+}
 
 const galleryClass = (count) => {
   if (count === 0) return 'gallery-empty-wrap'
@@ -128,12 +143,18 @@ const openImagePreview = (imgSrc) => {
 const closeImagePreview = () => {
   showImagePreview.value = false
 }
+
+function formatDate(value) {
+  if (!value) return '-'
+  return String(value).replace(/-/g, '.').slice(0, 16)
+}
+
+onMounted(loadMoments)
 </script>
 
 <style scoped>
 #container {
   width: 100%;
-  max-width: var(--blog-content-max, 960px);
   margin: 0 auto;
   padding: 8px 16px 44px;
 }
@@ -153,17 +174,36 @@ const closeImagePreview = () => {
   min-width: 0;
 }
 
+.feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--blog-divider);
+}
+
+.feed-head h2 {
+  margin: 0 0 4px;
+  color: var(--app-text-primary);
+}
+
+.feed-head p {
+  margin: 0;
+  color: var(--app-text-muted);
+}
+
 .moment-card {
   position: relative;
   display: block;
-  height: 430px;
+  min-height: 430px;
 }
 
 .moment-panel {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   min-width: 0;
-  min-height: 0;
+  min-height: 430px;
   padding: 18px 18px 16px;
   overflow: hidden;
   background: var(--app-surface);
@@ -248,6 +288,7 @@ const closeImagePreview = () => {
 
 .gallery-empty-wrap {
   grid-template-columns: 1fr;
+  min-height: 190px;
 }
 
 .gallery-item {
@@ -265,10 +306,6 @@ const closeImagePreview = () => {
 .gallery-item::before {
   content: '';
   display: block;
-  height: 100%;
-}
-
-.gallery-one .gallery-item::before {
   height: 100%;
 }
 
@@ -292,9 +329,7 @@ const closeImagePreview = () => {
   justify-content: center;
   min-height: 100%;
   color: var(--app-text-muted);
-  background:
-    linear-gradient(135deg, transparent 0 48%, var(--blog-divider) 49% 51%, transparent 52%),
-    var(--app-surface-muted);
+  background: var(--app-surface-muted);
   border: 1px dashed var(--blog-card-border);
   border-radius: 6px;
   font-size: 13px;
@@ -326,22 +361,13 @@ const closeImagePreview = () => {
   color: var(--blog-link);
 }
 
-.moment-stats .iconfont {
-  margin-right: 4px;
-  font-size: 15px;
-}
-
 .space-side {
   width: 250px;
 }
 
-:global(html.dark) .moment-panel {
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
-}
-
-:global(html.dark) .moment-card:hover .moment-panel {
-  border-color: rgba(99, 179, 237, 0.32);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+.pager-wrap {
+  display: flex;
+  justify-content: flex-end;
 }
 
 @media (max-width: 900px) {
@@ -359,14 +385,7 @@ const closeImagePreview = () => {
     padding: 8px 14px 36px;
   }
 
-  .moment-card {
-    height: 420px;
-  }
-
-  .moment-panel {
-    padding: 15px 14px 14px;
-  }
-
+  .feed-head,
   .moment-head,
   .moment-foot {
     flex-direction: column;

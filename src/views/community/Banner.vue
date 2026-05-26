@@ -12,8 +12,7 @@
 
 <style scoped>
 .page-banner {
-  width: 100%;
-  max-width: var(--blog-content-max, 960px);
+  width: var(--blog-content-width);
   margin: 0 auto;
   padding: 20px 16px 0;
 }

@@ -1,103 +1,373 @@
 <template>
   <div class="article-feed">
+    <div class="feed-toolbar">
+      <el-input
+        v-model="query.keyword"
+        clearable
+        placeholder="搜索文章标题 / 摘要"
+        class="search-input"
+        @keyup.enter="loadArticles"
+        @clear="loadArticles"
+      />
+      <el-button type="primary" :loading="loading" @click="loadArticles">搜索</el-button>
+    </div>
+
+    <el-alert
+      v-if="error"
+      :title="error"
+      type="error"
+      show-icon
+      :closable="false"
+    />
+
+    <el-skeleton v-if="loading && !contentList.length" :rows="5" animated />
+
+    <el-empty v-else-if="!contentList.length" description="暂无文章" />
+
     <article
       v-for="(item, index) in contentList"
+      v-else
       :key="item.id"
       class="post-card"
-      :class="index % 2 === 0 ? 'post-card--image-left' : 'post-card--image-right'"
+      @click="openArticle(item.id)"
     >
-      <div class="post-content">
-        <p class="post-kind">文章</p>
+      <!-- 动态绑定背景图 -->
+      <div class="post-content" :style="getItemBgStyle(item)">
+        <p class="post-kind">{{ item.type === 'shuoshuo' ? '朋友圈' : '文章' }}</p>
         <h2 class="post-title">
           <a href="javascript:void(0)" @click.prevent>{{ item.title }}</a>
         </h2>
-        <p class="post-excerpt" v-html="item.excerpt" />
+        <p class="post-excerpt">{{ item.summary || item.contentText || '暂无摘要' }}</p>
         <ul class="post-meta">
-          <li>作者: Echo</li>
-          <li>{{ item.date }}</li>
-          <li>{{ item.category }}</li>
-          <li>{{ item.comments }} 评论</li>
+          <li>作者: Lycoding</li>
+          <li>{{ formatDate(item.publishTime || item.createTime) }}</li>
+          <li>{{ item.categoryName || resolveCategory(item) }}</li>
+          <li>{{ item.commentCount ?? 0 }} 评论</li>
         </ul>
         <p class="post-more">
-          <a href="javascript:void(0)" @click.prevent>阅读全文</a>
+          <a href="javascript:void(0)" @click.prevent="openArticle(item.id)">阅读全文</a>
         </p>
       </div>
-
-      <a class="post-cover" href="javascript:void(0)" @click.prevent :aria-label="`${item.title} 封面`">
-        <img :src="resolveCoverUrl(item)" :alt="item.title" loading="lazy">
-      </a>
     </article>
 
     <div class="pager-wrap">
-      <PaginateVue />
+      <el-pagination
+        v-model:current-page="query.pageNum"
+        v-model:page-size="query.pageSize"
+        background
+        layout="total, prev, pager, next"
+        :total="total"
+        @current-change="loadArticles"
+      />
     </div>
+
+    <el-dialog v-model="detailVisible" width="min(920px, 92vw)" class="article-dialog" destroy-on-close>
+      <template #header>
+        <div class="detail-head">
+          <p>{{ detail.categoryName || resolveCategory(detail) }}</p>
+          <h2>{{ detail.title }}</h2>
+          <span>{{ formatDate(detail.publishTime || detail.createTime) }}</span>
+        </div>
+      </template>
+      <img v-if="detail.coverUrl" class="detail-cover" :src="detail.coverUrl" :alt="detail.title">
+      <p v-if="detail.summary" class="detail-summary">{{ detail.summary }}</p>
+      <article class="detail-body" v-html="detail.contentHtml || textToHtml(detail.contentText)" />
+
+      <section class="detail-comments">
+        <div class="detail-comments-head">
+          <h3>评论（{{ detailCommentTotal }}）</h3>
+          <el-button link :loading="detailCommentLoading" @click="loadArticleComments()">刷新</el-button>
+        </div>
+
+        <div class="comment-form">
+          <el-input
+            v-model="detailCommentForm.content"
+            type="textarea"
+            :rows="3"
+            maxlength="800"
+            show-word-limit
+            :placeholder="articleReplyTarget ? `回复 ${articleReplyTarget.nickname}` : '写下你的评论'"
+          />
+          <div class="comment-fields">
+            <el-input v-model="detailCommentForm.nickname" placeholder="昵称" />
+            <el-input v-model="detailCommentForm.email" placeholder="邮箱" />
+            <el-input v-model="detailCommentForm.website" placeholder="网站（选填）" />
+          </div>
+          <div class="comment-actions">
+            <el-button v-if="articleReplyTarget" @click="cancelArticleReply">取消回复</el-button>
+            <el-button type="primary" :loading="detailCommentSubmitting" @click="submitArticleComment">提交评论</el-button>
+          </div>
+        </div>
+
+        <el-skeleton v-if="detailCommentLoading && !detailComments.length" :rows="3" animated />
+        <el-empty v-else-if="!detailComments.length" description="暂无评论" />
+        <div v-else class="comment-list">
+          <div v-for="comment in detailComments" :key="comment.id" class="comment-item">
+            <div class="comment-main">
+              <el-avatar :size="36">{{ displayAvatarText(comment.nickname) }}</el-avatar>
+              <div class="comment-content">
+                <div class="comment-meta">
+                  <strong>{{ comment.nickname }}</strong>
+                  <span>{{ formatDate(comment.createTime) }}</span>
+                </div>
+                <p>{{ comment.content }}</p>
+                <button type="button" @click="startArticleReply(comment, comment)">回复</button>
+              </div>
+            </div>
+            <div v-if="comment.replyList?.length" class="reply-list">
+              <div v-for="reply in comment.replyList" :key="reply.id" class="comment-main reply-main">
+                <el-avatar :size="30">{{ displayAvatarText(reply.nickname) }}</el-avatar>
+                <div class="comment-content">
+                  <div class="comment-meta">
+                    <strong>{{ reply.nickname }}</strong>
+                    <span>回复 {{ reply.replyToNickname || comment.nickname }} · {{ formatDate(reply.createTime) }}</span>
+                  </div>
+                  <p>{{ reply.content }}</p>
+                  <button type="button" @click="startArticleReply(comment, reply)">回复</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comment-pager">
+          <el-pagination
+            v-model:current-page="detailCommentQuery.pageNum"
+            v-model:page-size="detailCommentQuery.pageSize"
+            background
+            small
+            layout="prev, pager, next"
+            :total="detailCommentTotal"
+            @current-change="loadArticleComments()"
+          />
+        </div>
+      </section>
+    </el-dialog>
   </div>
 </template>
-
 <script setup>
-import { ref, computed } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import Paginate from '@/components/agination/Paginate.vue'
+import { ElMessage } from 'element-plus'
+import { publicArticleDetailService, publicArticlePageService } from '@/api/article'
+import { commentPageService, commentSubmitService } from '@/api/comment'
 
 const route = useRoute()
+const loading = ref(false)
+const error = ref('')
+const contentList = ref([])
+const total = ref(0)
+const detailVisible = ref(false)
+const detail = ref({})
+const detailComments = ref([])
+const detailCommentTotal = ref(0)
+const detailCommentLoading = ref(false)
+const detailCommentSubmitting = ref(false)
+const articleReplyTarget = ref(null)
+const articleReplyRoot = ref(null)
 
-const allPosts = ref([
-  {
-    id: 1,
-    title: 'Codex 自制宠物',
-    excerpt: '使用 Codex 自制宠物并且添加到博客中使用',
-    date: '2026-05-08 13:06',
-    category: '建站',
-    comments: 10,
-    coverUrl: '/img/bac2.jpg',
-  },
-  {
-    id: 2,
-    title: 'U-Boot、内核移植与根文件系统构建（BeagleBone Green Gateway&AM335X）',
-    excerpt: '基于 BeagleBone Green Gateway 开发板（核心芯片为 TI AM3358）的 U-Boot、内核移植与根文件系统构建全流程',
-    date: '2026-04-25 22:36',
-    category: '嵌入式',
-    comments: 4,
-    coverUrl: '/static/images/nickname.png',
-  },
-  {
-    id: 3,
-    title: '你们搞大模型的就是？',
-    excerpt: '关于近期大模型发展和使用的小感概：你们搞大模型的就是码奸，你们已经害死前端兄弟了，还要害死后端兄弟……',
-    date: '2026-04-11 14:11',
-    category: '生活',
-    comments: 14,
-    coverUrl: '/img/neymar.jpg',
-  },
-])
-
-const contentList = computed(() => {
-  const q = (route.query.q || '').toString().trim().toLowerCase()
-  if (!q) return allPosts.value
-  return allPosts.value.filter(
-    (p) =>
-      p.title.toLowerCase().includes(q) ||
-      p.excerpt.replace(/<[^>]+>/g, '').toLowerCase().includes(q)
-  )
+const query = reactive({
+  pageNum: 1,
+  pageSize: 8,
+  keyword: '',
+  type: 'article',
 })
 
-const resolveCoverUrl = (post) => {
+const detailCommentQuery = reactive({
+  pageNum: 1,
+  pageSize: 5,
+})
+
+const detailCommentForm = reactive({
+  content: '',
+  nickname: localStorage.getItem('personblog_comment_nickname') || '',
+  email: localStorage.getItem('personblog_comment_email') || '',
+  website: localStorage.getItem('personblog_comment_website') || '',
+})
+
+// ✅ 获取文章背景
+function getItemBgStyle(item) {
+  const url = item.coverUrl || item.coverPage || item.thumbnail || '/img/bac2.jpg'
+  return `
+    background-image: url('${url}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+  `
+}
+
+async function loadArticles() {
+  loading.value = true
+  error.value = ''
+  try {
+    const res = await publicArticlePageService({ ...query })
+    const page = res?.data ?? res ?? {}
+    contentList.value = page.records ?? page.list ?? []
+    total.value = page.total ?? contentList.value.length
+  } catch (err) {
+    contentList.value = []
+    total.value = 0
+    error.value = err?.message || '文章列表加载失败，请确认后端 `/article/public/page` 可访问。'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function openArticle(id) {
+  if (!id) return
+  try {
+    const res = await publicArticleDetailService(id)
+    detail.value = res?.data ?? res ?? {}
+    detailVisible.value = true
+    detailCommentQuery.pageNum = 1
+    cancelArticleReply()
+    loadArticleComments(id)
+  } catch (err) {
+    error.value = err?.message || '文章详情加载失败。'
+  }
+}
+
+async function loadArticleComments(articleId = detail.value?.id) {
+  if (!articleId) return
+  detailCommentLoading.value = true
+  try {
+    const res = await commentPageService({ articleId, ...detailCommentQuery })
+    const page = res?.data ?? res ?? {}
+    detailComments.value = (page.records ?? page.list ?? []).map((item) => ({
+      ...item,
+      replyList: item.replyList ?? [],
+    }))
+    detailCommentTotal.value = page.total ?? detailComments.value.length
+  } catch (err) {
+    detailComments.value = []
+    detailCommentTotal.value = 0
+    ElMessage.error(err?.message || '文章评论加载失败')
+  } finally {
+    detailCommentLoading.value = false
+  }
+}
+
+async function submitArticleComment() {
+  if (!detail.value?.id) return
+  if (!detailCommentForm.content.trim()) {
+    ElMessage.warning('请填写评论内容')
+    return
+  }
+  if (!detailCommentForm.nickname.trim()) {
+    ElMessage.warning('请填写昵称')
+    return
+  }
+  if (!detailCommentForm.email.trim()) {
+    ElMessage.warning('请填写邮箱')
+    return
+  }
+
+  detailCommentSubmitting.value = true
+  try {
+    await commentSubmitService({
+      articleId: detail.value.id,
+      content: detailCommentForm.content.trim(),
+      nickname: detailCommentForm.nickname.trim(),
+      email: detailCommentForm.email.trim(),
+      website: detailCommentForm.website.trim(),
+      parentId: articleReplyRoot.value?.id ?? 0,
+      replyToId: articleReplyTarget.value?.id ?? null,
+    })
+    localStorage.setItem('personblog_comment_nickname', detailCommentForm.nickname.trim())
+    localStorage.setItem('personblog_comment_email', detailCommentForm.email.trim())
+    localStorage.setItem('personblog_comment_website', detailCommentForm.website.trim())
+    detailCommentForm.content = ''
+    cancelArticleReply()
+    ElMessage.success('评论提交成功')
+    await loadArticleComments()
+  } catch (err) {
+    ElMessage.error(err?.message || '评论提交失败')
+  } finally {
+    detailCommentSubmitting.value = false
+  }
+}
+
+function startArticleReply(root, target) {
+  articleReplyRoot.value = root
+  articleReplyTarget.value = target
+}
+
+function cancelArticleReply() {
+  articleReplyRoot.value = null
+  articleReplyTarget.value = null
+}
+
+function resolveCoverUrl(post) {
   return post.coverUrl || post.coverPage || post.thumbnail || '/img/bac2.jpg'
 }
+
+function resolveCategory(post) {
+  return post.tags?.[0]?.name || '未分类'
+}
+
+function formatDate(value) {
+  if (!value) return '-'
+  return String(value).replace(/-/g, '.').slice(0, 16)
+}
+
+function displayAvatarText(name = '') {
+  return name.trim().slice(0, 1) || '访'
+}
+
+function textToHtml(text = '') {
+  return String(text)
+    .split(/\n+/)
+    .filter(Boolean)
+    .map((line) => `<p>${escapeHtml(line)}</p>`)
+    .join('')
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+onMounted(() => {
+  if (typeof route.query.q === 'string') {
+    query.keyword = route.query.q
+  }
+  loadArticles()
+})
+
+watch(
+  () => route.query.q,
+  (value) => {
+    query.keyword = typeof value === 'string' ? value : ''
+    query.pageNum = 1
+    loadArticles()
+  }
+)
 </script>
 
 <style scoped>
 .article-feed {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 14px;
+}
+
+.feed-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-bottom: 6px;
+}
+
+.search-input {
+  max-width: 360px;
 }
 
 .post-card {
-  --cover-width: 30%;
-  --cut-size: 28px;
-  --edge-x: 20px;
-  --edge-y: 10px;
   position: relative;
   display: block;
   height: 234px;
@@ -120,52 +390,16 @@ const resolveCoverUrl = (post) => {
   transform: translateY(-1px);
 }
 
-.post-card:active {
-  transform: translateY(0);
-}
-
 .post-content {
   position: absolute;
-  top: var(--edge-y);
-  bottom: var(--edge-y);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 2;
-  width: calc(100% - var(--cover-width) - var(--edge-x) * 2);
+  padding: 10px 32px;
   min-width: 0;
   overflow: hidden;
-}
-
-.post-card--image-left .post-content {
-  right: var(--edge-x);
-  padding: 0 0 0 calc(var(--cut-size) + 18px);
-  clip-path: polygon(var(--cut-size) 0, 100% 0, 100% 100%, 0 100%);
-}
-
-.post-card--image-right .post-content {
-  left: var(--edge-x);
-  padding: 0 calc(var(--cut-size) + 18px) 0 0;
-  clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut-size)) 100%, 0 100%);
-}
-
-.post-content::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  width: 1px;
-  height: 100%;
-  background: var(--blog-divider);
-  opacity: 0.9;
-}
-
-.post-card--image-left .post-content::after {
-  left: var(--cut-size);
-  transform: skewX(-10deg);
-  transform-origin: top;
-}
-
-.post-card--image-right .post-content::after {
-  right: var(--cut-size);
-  transform: skewX(-10deg);
-  transform-origin: bottom;
 }
 
 .post-kind {
@@ -189,15 +423,6 @@ const resolveCoverUrl = (post) => {
 .post-title a {
   color: var(--app-text-primary);
   text-decoration: none;
-}
-
-.post-title a:hover {
-  color: var(--blog-link);
-}
-
-.post-card:hover .post-title a,
-.post-card:focus-within .post-title a {
-  color: var(--blog-link);
 }
 
 .post-excerpt {
@@ -241,60 +466,177 @@ const resolveCoverUrl = (post) => {
   text-decoration: none;
 }
 
-.post-more a:hover {
-  text-decoration: underline;
-}
-
-.post-cover {
-  position: absolute;
-  top: var(--edge-y);
-  bottom: var(--edge-y);
-  display: block;
-  width: calc(var(--cover-width) + var(--cut-size) - var(--edge-x));
-  min-height: 0;
-  overflow: hidden;
-  background: var(--app-surface-muted);
-}
-
-.post-card--image-left .post-cover {
-  left: var(--edge-x);
-  clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut-size)) 100%, 0 100%);
-}
-
-.post-card--image-right .post-cover {
-  right: var(--edge-x);
-  clip-path: polygon(var(--cut-size) 0, 100% 0, 100% 100%, 0 100%);
-}
-
-.post-cover::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 42%);
-  pointer-events: none;
-}
-
-.post-cover img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  transition: transform 0.35s ease, filter 0.35s ease;
-}
-
-.post-card:hover .post-cover img {
-  transform: scale(1.04);
-  filter: saturate(1.04) contrast(1.03);
-}
-
 .pager-wrap {
-  padding: 20px 0 8px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0 8px;
+}
+
+.detail-head p,
+.detail-head span {
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.detail-head h2 {
+  margin: 4px 0;
+  color: var(--app-text-primary);
+  line-height: 1.4;
+}
+
+.detail-cover {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.detail-summary {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  color: var(--app-text-secondary);
+  background: var(--app-surface-muted);
+  border-left: 3px solid var(--blog-link);
+}
+
+.detail-body {
+  color: var(--app-text-secondary);
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+.detail-body :deep(img) {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+.detail-body :deep(pre) {
+  padding: 14px;
+  overflow: auto;
+  color: #f8fafc;
+  background: #282c34;
+  border-radius: 6px;
+}
+
+.detail-comments {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--blog-divider);
+}
+
+.detail-comments-head,
+.comment-actions,
+.comment-meta,
+.comment-pager {
+  display: flex;
+  align-items: center;
+}
+
+.detail-comments-head {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.detail-comments-head h3 {
+  margin: 0;
+  color: var(--app-text-primary);
+  font-size: 18px;
+}
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.comment-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.comment-actions {
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.comment-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--blog-divider);
+}
+
+.comment-main {
+  display: grid;
+  thead-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.reply-list {
+  margin: 10px 0 0 52px;
+  padding: 8px 0 0 12px;
+  border-left: 2px solid var(--blog-divider);
+}
+
+.reply-main {
+  grid-template-columns: 34px minmax(0, 1fr);
+  padding: 8px 0;
+}
+
+.comment-content {
+  min-width: 0;
+}
+
+.comment-meta {
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.comment-meta strong {
+  color: var(--app-text-primary);
+}
+
+.comment-content p {
+  margin: 6px 0;
+  color: var(--app-text-secondary);
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.comment-content button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--blog-link);
+  cursor: pointer;
+}
+
+.comment-pager {
+  justify-content: flex-end;
+  padding-top: 12px;
 }
 
 @media (max-width: 720px) {
+  .feed-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-input {
+    max-width: none;
+  }
+
   .post-card {
     display: flex;
     flex-direction: column;
@@ -308,47 +650,18 @@ const resolveCoverUrl = (post) => {
   .post-content {
     position: relative;
     top: auto;
-    bottom: auto;
     left: auto;
-    right: auto;
-    width: 100%;
-    min-height: 0;
-    padding-right: 0;
-    clip-path: none;
-  }
-
-  .post-card--image-left .post-content,
-  .post-card--image-right .post-content {
-    padding: 0;
-  }
-
-  .post-content::after {
-    display: none;
-  }
-
-  .post-cover {
-    position: relative;
-    top: auto;
     right: auto;
     bottom: auto;
-    left: auto;
-    width: 100%;
-    order: -1;
-    min-height: 180px;
-    clip-path: none;
-    border: 1px solid var(--blog-card-border);
+    padding: 18px;
   }
 
-  .post-card--image-left .post-cover,
-  .post-card--image-right .post-cover {
-    left: auto;
-    right: auto;
-    clip-path: none;
+  .comment-fields {
+    grid-template-columns: 1fr;
   }
 
-  .post-cover img {
-    position: static;
-    min-height: 180px;
+  .reply-list {
+    margin-left: 18px;
   }
 }
 </style>

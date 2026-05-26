@@ -1,5 +1,5 @@
 <template>
-  <MyPet />
+  <!-- <MyPet /> -->
   <RouterView />
 </template>
 

@@ -22,7 +22,7 @@
 
 <style scoped>
 .blog-page {
-  max-width: var(--blog-content-max, 960px);
+  width: var(--blog-content-width);
   margin: 0 auto;
   padding: 24px 16px 48px;
 }

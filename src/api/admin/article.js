@@ -139,6 +139,14 @@ function parseContentBlocks(data) {
   if (Array.isArray(data.contentBlocks) && data.contentBlocks.length) {
     return data.contentBlocks
   }
+  if (typeof data.contentBlocks === 'string' && data.contentBlocks) {
+    try {
+      const parsed = JSON.parse(data.contentBlocks)
+      if (Array.isArray(parsed)) return parsed
+    } catch {
+      return [{ id: 'legacy_p', type: 'paragraph', content: data.contentBlocks }]
+    }
+  }
   if (typeof data.content === 'string' && data.content) {
     try {
       const parsed = JSON.parse(data.content)

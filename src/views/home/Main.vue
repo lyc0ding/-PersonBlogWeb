@@ -115,7 +115,7 @@ const quickLinks = [
 
 <style scoped>
 .home-main {
-  width: min(100% - 32px, var(--blog-content-max, 960px));
+  width: var(--blog-content-width);
   margin: 0 auto;
   padding: 0 0 56px;
 }
@@ -400,7 +400,7 @@ const quickLinks = [
 
 @media (max-width: 620px) {
   .home-main {
-    width: calc(100% - 24px);
+    width: var(--blog-content-width);
   }
 
   .home-overview {

@@ -62,7 +62,7 @@ const navItems = [
   { label: '朋友圈', path: '/space' },
   { label: '文章', path: '/technolyge' },
   { label: '留言板', path: '/comments' },
-  { label: '友链', path: '/links' },
+  { label: '照片', path: '/photos' },
   { label: '关于', path: '/about' },
 ]
 
@@ -123,7 +123,7 @@ const navTo = () => {
 }
 
 .nav-inner {
-  max-width: var(--blog-content-max, 960px);
+  width: var(--blog-content-width);
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;

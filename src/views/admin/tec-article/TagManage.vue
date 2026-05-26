@@ -8,6 +8,14 @@
       <el-button @click="loadTags">刷新</el-button>
     </div>
 
+    <el-alert
+      v-if="error"
+      :title="error"
+      type="error"
+      show-icon
+      :closable="false"
+    />
+
     <el-table v-loading="loading" :data="tagList" row-key="id" border :tree-props="{ children: 'children' }">
       <el-table-column prop="name" label="标签名称" min-width="220" />
       <el-table-column label="级别" width="120">
@@ -66,6 +74,7 @@ import { tagAddService, tagListService } from '@/api/admin/tag'
 const loading = ref(false)
 const dialogVisible = ref(false)
 const tagList = ref([])
+const error = ref('')
 
 const form = reactive({
   name: '',
@@ -85,15 +94,14 @@ function resetForm() {
 
 async function loadTags() {
   loading.value = true
+  error.value = ''
   try {
     const res = await tagListService()
-    tagList.value = res?.data ?? res ?? []
-  } catch {
-    tagList.value = [
-      { id: 1, name: 'Java', level: 1, status: 1, createTime: '2026-05-17 12:00:00' },
-      { id: 2, name: 'Spring Boot', level: 2, parent: 1, status: 1, createTime: '2026-05-17 12:00:00' },
-      { id: 3, name: '生活记录', level: 1, status: 1, createTime: '2026-05-17 12:00:00' },
-    ]
+    const list = res?.data ?? res ?? []
+    tagList.value = Array.isArray(list) ? list : []
+  } catch (err) {
+    tagList.value = []
+    error.value = err?.message || '标签列表加载失败，请确认后端 `/tag/list` 可访问。'
   } finally {
     loading.value = false
   }
@@ -104,18 +112,18 @@ async function submit() {
     ElMessage.warning('请填写标签名称')
     return
   }
+  if (form.level === 2 && !form.parent) {
+    ElMessage.warning('请选择父级标签')
+    return
+  }
   try {
     await tagAddService({ ...form, parent: form.level === 1 ? 0 : form.parent })
     ElMessage.success('标签已保存')
     dialogVisible.value = false
     resetForm()
     loadTags()
-  } catch {
-    const id = Date.now()
-    tagList.value.push({ id, ...form, createTime: new Date().toLocaleString('zh-CN', { hour12: false }) })
-    ElMessage.warning('后端未就绪，已添加到本地演示列表')
-    dialogVisible.value = false
-    resetForm()
+  } catch (err) {
+    ElMessage.error(err?.message || '标签保存失败，请检查后端接口')
   }
 }
 

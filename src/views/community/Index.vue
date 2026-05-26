@@ -31,7 +31,7 @@ import Main from './Main.vue'
 }
 
 .blog-grid {
-  max-width: var(--blog-content-max, 960px);
+  width: var(--blog-content-width);
   margin: 0 auto;
   padding: 8px 16px 0;
   display: grid;

@@ -22,7 +22,13 @@ service.interceptors.request.use(
 
 // 配置响应拦截器
 service.interceptors.response.use(
-    response => response.data, // 直接返回响应数据
+    response => {
+      const body = response.data
+      if (body && typeof body === 'object' && body.success === false) {
+        return Promise.reject(body)
+      }
+      return body
+    },
     error => {
       // 根据 HTTP 状态码提示错误
       let message = '';

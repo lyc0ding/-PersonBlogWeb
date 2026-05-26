@@ -26,7 +26,7 @@ const heroTags = ['Java / Vue', '嵌入式', '生活记录']
 <style scoped>
 .home-hero {
   position: relative;
-  width: min(100% - 32px, var(--blog-content-max, 960px));
+  width: var(--blog-content-width);
   min-height: clamp(300px, 42vh, 420px);
   margin: 0 auto 18px;
   overflow: hidden;
@@ -145,7 +145,7 @@ const heroTags = ['Java / Vue', '嵌入式', '生活记录']
 
 @media (max-width: 720px) {
   .home-hero {
-    width: calc(100% - 24px);
+    width: var(--blog-content-width);
     min-height: 360px;
     margin-bottom: 12px;
     background:

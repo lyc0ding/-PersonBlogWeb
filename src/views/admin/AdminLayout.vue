@@ -51,6 +51,16 @@
               <el-menu-item index="/admin/tec/article/tag">标签管理</el-menu-item>
             </el-sub-menu>
 
+            <el-menu-item index="/admin/timeline">
+              <el-icon><Picture /></el-icon>
+              <template #title>朋友圈管理</template>
+            </el-menu-item>
+
+            <el-menu-item index="/admin/comment">
+              <el-icon><ChatDotRound /></el-icon>
+              <template #title>留言评论</template>
+            </el-menu-item>
+
             <el-menu-item index="/admin/user">
               <el-icon><User /></el-icon>
               <template #title>用户管理</template>
@@ -88,6 +98,8 @@ import {
   Expand,
   Fold,
   House,
+  ChatDotRound,
+  Picture,
   Setting,
   User,
 } from '@element-plus/icons-vue'

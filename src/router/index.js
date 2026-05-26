@@ -45,11 +45,15 @@ const router = createRouter({
                 },
                 {
                     path: '/links',
-                    name: 'Friends',
+                    redirect: '/photos'
+                },
+                {
+                    path: '/photos',
+                    name: 'Photos',
                     component: () => import('@/views/FriendsView.vue'),
                     meta: {
                         keepAlive: true,
-                        title: '友链'
+                        title: '照片'
                     }
                 },
                 {
@@ -148,6 +152,24 @@ const router = createRouter({
                     meta: {
                         keepAlive: true, // 启用缓存  
                         title: '标签管理'
+                    },
+                },
+                {
+                    path: '/admin/timeline',
+                    name: 'TimelineManage',
+                    component: () => import('@/views/admin/TimelineManage.vue'),
+                    meta: {
+                        keepAlive: true,
+                        title: '朋友圈管理'
+                    },
+                },
+                {
+                    path: '/admin/comment',
+                    name: 'CommentManage',
+                    component: () => import('@/views/admin/CommentManage.vue'),
+                    meta: {
+                        keepAlive: true,
+                        title: '留言评论管理'
                     },
                 }
             ]
