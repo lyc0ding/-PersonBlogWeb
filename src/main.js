@@ -15,7 +15,9 @@ import Axios from 'axios'
 // import './assets/fonts/fonts.css';//字体文件
 import './assets/styles/variables.scss'
 import './assets/styles/theme.scss'
+import './assets/styles/light-content.scss'
 import './assets/styles/global.scss'
+import './assets/styles/pet-dog-sprites.scss'
 
 const app = createApp(App)
 

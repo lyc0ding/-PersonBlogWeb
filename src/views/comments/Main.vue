@@ -43,6 +43,11 @@
             <span>正在回复 @{{ replyTarget.nickname }}</span>
           </div>
 
+          <div class="composer-toolbar">
+            <CommentEmojiPicker @select="insertEmoji" />
+            <span class="composer-toolbar__hint">支持在正文中插入表情，也可以给留言点赞式回应</span>
+          </div>
+
           <textarea
             ref="contentInput"
             v-model="form.content"
@@ -63,6 +68,18 @@
             <label class="field-item">
               <span><el-icon><Link /></el-icon>网站</span>
               <input v-model="form.website" type="url" maxlength="255" placeholder="https://example.com">
+            </label>
+            <label class="field-item field-item--avatar">
+              <span><el-icon><Picture /></el-icon>头像</span>
+              <div class="avatar-field">
+                <CommentAvatar :src="form.avatar" :name="form.nickname" size="sm" />
+                <input
+                  v-model="form.avatar"
+                  type="url"
+                  maxlength="512"
+                  placeholder="头像图片链接，可留空"
+                >
+              </div>
             </label>
           </div>
 
@@ -101,7 +118,11 @@
 
           <div v-else class="message-list">
             <article v-for="message in messageContents" :key="message.id" class="message-card">
-              <div class="avatar" :title="message.nickname">{{ displayAvatarText(message.nickname) }}</div>
+              <CommentAvatar
+                :src="resolveAvatar(message)"
+                :name="message.nickname"
+                size="md"
+              />
 
               <div class="message-content">
                 <div class="message-meta">
@@ -116,6 +137,8 @@
 
                 <p class="message-body">{{ message.content }}</p>
 
+                <CommentReactionBar :comment-id="message.id" />
+
                 <div class="message-tools">
                   <span><el-icon><Location /></el-icon>{{ displayLocation(message) }}</span>
                   <button type="button" @click="startReply(message, message)">回复</button>
@@ -127,9 +150,11 @@
                     :key="reply.id"
                     class="reply-item"
                   >
-                    <div class="avatar avatar--small" :title="reply.nickname">
-                      {{ displayAvatarText(reply.nickname) }}
-                    </div>
+                    <CommentAvatar
+                      :src="resolveAvatar(reply)"
+                      :name="reply.nickname"
+                      size="sm"
+                    />
                     <div class="reply-content">
                       <div class="reply-meta">
                         <strong>{{ reply.nickname }}</strong>
@@ -137,6 +162,7 @@
                         <time>{{ formatDate(reply.createTime) }}</time>
                       </div>
                       <p>{{ reply.content }}</p>
+                      <CommentReactionBar :comment-id="reply.id" />
                       <div class="message-tools">
                         <span><el-icon><Location /></el-icon>{{ displayLocation(reply) }}</span>
                         <button type="button" @click="startReply(message, reply)">回复</button>
@@ -186,6 +212,8 @@
             <li>昵称、邮箱和内容为必填项。</li>
             <li>请保持话题清晰，避免重复提交。</li>
             <li>网站地址会作为个人主页链接展示。</li>
+            <li>头像链接会展示在留言旁，并保存在本机资料中。</li>
+            <li>可对留言添加表情反应，同一设备仅保留一个反应。</li>
           </ul>
         </section>
 
@@ -216,6 +244,7 @@ import {
   Link,
   Location,
   Message,
+  Picture,
   Promotion,
   Refresh,
   User,
@@ -225,6 +254,14 @@ import {
   commentPageService,
   commentSubmitService,
 } from '@/api/comment'
+import CommentAvatar from '@/components/comment/CommentAvatar.vue'
+import CommentEmojiPicker from '@/components/comment/CommentEmojiPicker.vue'
+import CommentReactionBar from '@/components/comment/CommentReactionBar.vue'
+import {
+  loadCommentProfile,
+  resolveCommentAvatar,
+  saveCommentProfile,
+} from '@/utils/commentProfile'
 
 const replyPreviewLimit = 2
 const loading = ref(false)
@@ -248,11 +285,14 @@ const stats = reactive({
   latestTime: '',
 })
 
+const savedProfile = loadCommentProfile()
+
 const form = reactive({
   content: '',
-  nickname: localStorage.getItem('personblog_comment_nickname') || '',
-  email: localStorage.getItem('personblog_comment_email') || '',
-  website: localStorage.getItem('personblog_comment_website') || '',
+  nickname: savedProfile.nickname,
+  email: savedProfile.email,
+  website: savedProfile.website,
+  avatar: savedProfile.avatar,
 })
 
 const localReplyCount = computed(() => {
@@ -309,6 +349,7 @@ async function submitComment() {
   const nickname = form.nickname.trim()
   const email = form.email.trim()
   const website = normalizeWebsite(form.website)
+  const avatar = form.avatar.trim()
 
   if (!content) {
     ElMessage.warning('请填写留言内容')
@@ -335,14 +376,14 @@ async function submitComment() {
       nickname,
       email,
       website,
+      avatar,
       parentId: replyRoot.value?.id ?? 0,
       replyToId: replyTarget.value?.id ?? null,
     })
-    localStorage.setItem('personblog_comment_nickname', nickname)
-    localStorage.setItem('personblog_comment_email', email)
-    localStorage.setItem('personblog_comment_website', website)
+    saveCommentProfile({ nickname, email, website, avatar })
     form.content = ''
     form.website = website
+    form.avatar = avatar
     cancelReply()
     if (!isReplying) {
       query.pageNum = 1
@@ -384,8 +425,24 @@ function visibleReplies(message) {
   return message.replyList.slice(0, replyPreviewLimit)
 }
 
-function displayAvatarText(name = '') {
-  return name.trim().slice(0, 1).toUpperCase() || '访'
+function insertEmoji(emoji) {
+  const el = contentInput.value
+  if (!el) {
+    form.content += emoji
+    return
+  }
+  const start = el.selectionStart ?? form.content.length
+  const end = el.selectionEnd ?? form.content.length
+  form.content = `${form.content.slice(0, start)}${emoji}${form.content.slice(end)}`
+  nextTick(() => {
+    const caret = start + emoji.length
+    el.focus()
+    el.setSelectionRange(caret, caret)
+  })
+}
+
+function resolveAvatar(item) {
+  return resolveCommentAvatar(item)
 }
 
 function displayLocation(item) {
@@ -578,9 +635,22 @@ onMounted(refreshGuestbook)
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--blog-link) 14%, transparent);
 }
 
+.composer-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.composer-toolbar__hint {
+  color: var(--app-text-muted);
+  font-size: 12px;
+}
+
 .composer-fields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 14px;
 }
@@ -609,6 +679,17 @@ onMounted(refreshGuestbook)
   color: var(--app-text-primary);
   font: inherit;
   box-sizing: border-box;
+}
+
+.avatar-field {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.avatar-field input {
+  min-width: 0;
 }
 
 .composer-actions {
@@ -648,27 +729,6 @@ onMounted(refreshGuestbook)
 .message-card:last-child {
   border-bottom: 0;
   padding-bottom: 4px;
-}
-
-.avatar {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--blog-link) 24%, var(--blog-divider));
-  border-radius: 50%;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--blog-link) 16%, var(--app-surface)), var(--app-surface));
-  color: var(--blog-link);
-  font-size: 18px;
-  font-weight: 700;
-  user-select: none;
-}
-
-.avatar--small {
-  width: 34px;
-  height: 34px;
-  font-size: 14px;
 }
 
 .message-content,
@@ -953,18 +1013,6 @@ onMounted(refreshGuestbook)
   .message-card {
     grid-template-columns: 40px minmax(0, 1fr);
     gap: 10px;
-  }
-
-  .avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
-  }
-
-  .avatar--small {
-    width: 30px;
-    height: 30px;
-    font-size: 13px;
   }
 
   .message-meta {

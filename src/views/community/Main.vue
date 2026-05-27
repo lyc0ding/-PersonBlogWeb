@@ -31,8 +31,9 @@
       class="post-card"
       @click="openArticle(item.id)"
     >
-      <!-- 动态绑定背景图 -->
-      <div class="post-content" :style="getItemBgStyle(item)">
+      <!-- 封面背景层 + 文字内容层 -->
+      <div class="post-cover" :style="getItemBgStyle(item)" aria-hidden="true" />
+      <div class="post-content">
         <p class="post-kind">{{ item.type === 'shuoshuo' ? '朋友圈' : '文章' }}</p>
         <h2 class="post-title">
           <a href="javascript:void(0)" @click.prevent>{{ item.title }}</a>
@@ -185,16 +186,12 @@ const detailCommentForm = reactive({
   website: localStorage.getItem('personblog_comment_website') || '',
 })
 
-// ✅ 获取文章背景
+// 获取文章封面背景
 function getItemBgStyle(item) {
   const url = item.coverUrl || item.coverPage || item.thumbnail || '/img/bac2.jpg'
-  return `
-    background-image: url('${url}');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-
-  `
+  return {
+    backgroundImage: `url('${url}')`,
+  }
 }
 
 async function loadArticles() {
@@ -383,23 +380,44 @@ watch(
 
 .post-card:hover,
 .post-card:focus-within {
-  background: linear-gradient(90deg, rgba(43, 108, 176, 0.06), transparent 68%);
   box-shadow:
     inset 3px 0 0 var(--blog-link),
-    0 10px 24px rgba(15, 23, 42, 0.06);
+    var(--app-shadow-card, 0 10px 24px rgba(15, 23, 42, 0.06));
   transform: translateY(-1px);
 }
 
-.post-content {
+.post-cover {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-  padding: 10px 32px;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
+}
+
+.post-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--post-overlay-start) 0%,
+    var(--post-overlay-start) 48%,
+    var(--post-overlay-mid) 66%,
+    var(--post-overlay-end) 84%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.post-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: 18px 32px;
   min-width: 0;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .post-kind {
@@ -638,22 +656,14 @@ watch(
   }
 
   .post-card {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
     height: auto;
-    min-height: 0;
-    padding: 8px 15px;
-    overflow: visible;
+    min-height: 200px;
+    padding: 0;
+    overflow: hidden;
   }
 
   .post-content {
-    position: relative;
-    top: auto;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    padding: 18px;
+    padding: 18px 20px;
   }
 
   .comment-fields {

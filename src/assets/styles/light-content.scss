@@ -1,0 +1,318 @@
+// 浅色模式内容区对比度增强（不影响 html.dark）
+
+html:not(.dark) {
+    --el-bg-color: var(--app-surface);
+    --el-bg-color-page: var(--app-bg-primary);
+    --el-text-color-primary: var(--app-text-primary);
+    --el-text-color-regular: var(--app-text-secondary);
+    --el-text-color-secondary: var(--app-text-muted);
+    --el-text-color-placeholder: #6b7280;
+    --el-border-color: var(--blog-input-border);
+    --el-border-color-light: var(--blog-divider);
+    --el-fill-color-blank: var(--app-surface);
+    --el-fill-color-light: var(--app-surface-muted);
+
+    /* ── 页面 Banner ── */
+    .page-banner-inner {
+        background: var(--app-surface);
+        border: 1px solid var(--blog-card-border);
+        border-radius: 4px;
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .page-sub {
+        color: var(--app-text-secondary);
+    }
+
+    /* ── 首页 ── */
+    .home-overview {
+        background: var(--app-surface);
+        border: 1px solid var(--blog-card-border);
+        border-top: 0;
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .stat-item span {
+        color: var(--app-text-muted);
+    }
+
+    .section-heading p {
+        color: var(--app-text-muted);
+    }
+
+    .post-list {
+        border-color: var(--blog-card-border);
+    }
+
+    .post-entry {
+        border-bottom-color: var(--blog-divider);
+    }
+
+    .post-entry:hover {
+        background: color-mix(in srgb, var(--blog-link) 7%, var(--app-surface));
+    }
+
+    .post-date {
+        color: var(--app-text-muted);
+    }
+
+    .post-category {
+        color: var(--app-text-secondary);
+        border-color: var(--blog-card-border);
+        background: var(--app-surface-muted);
+    }
+
+    .profile-block,
+    .now-block {
+        padding: 18px;
+        background: var(--app-surface);
+        border: 1px solid var(--blog-card-border);
+        border-radius: 4px;
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .profile-block {
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--blog-card-border);
+    }
+
+    .now-block {
+        margin-top: 0;
+        border-bottom: 0;
+    }
+
+    .profile-label {
+        color: var(--app-text-muted);
+    }
+
+    .profile-avatar {
+        border-color: var(--blog-card-border);
+    }
+
+    .quick-section {
+        border-color: var(--blog-card-border);
+        background: var(--blog-card-border);
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .quick-link {
+        border: 0;
+        box-shadow: none;
+    }
+
+    .quick-link:hover {
+        border-color: color-mix(in srgb, var(--blog-link) 35%, var(--blog-card-border));
+        background: var(--app-surface);
+    }
+
+    /* ── 文章列表 ── */
+    .article-feed {
+        background: var(--app-surface);
+        border: 1px solid var(--blog-card-border);
+        border-radius: 4px;
+        padding: 16px 18px;
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .feed-toolbar {
+        border-bottom: 1px solid var(--blog-divider);
+        padding-bottom: 12px;
+        margin-bottom: 4px;
+    }
+
+    .post-card {
+        background: var(--app-surface);
+        border: 1px solid var(--blog-card-border);
+        border-radius: 4px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--blog-card-border);
+    }
+
+    .post-card:hover,
+    .post-card:focus-within {
+        box-shadow:
+            inset 3px 0 0 var(--blog-link),
+            var(--app-shadow-card);
+    }
+
+    .post-kind,
+    .post-meta {
+        color: var(--app-text-muted);
+    }
+
+    .post-excerpt {
+        color: var(--app-text-secondary);
+    }
+
+    /* 文章详情弹窗 */
+    .article-dialog.el-dialog {
+        border: 1px solid var(--blog-card-border);
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.14);
+    }
+
+    .detail-summary {
+        color: var(--app-text-secondary);
+        background: var(--app-surface-muted);
+        border-left-color: var(--blog-link);
+    }
+
+    .detail-body {
+        color: var(--app-text-primary);
+    }
+
+    .detail-body p,
+    .detail-body li {
+        color: var(--app-text-secondary);
+    }
+
+    .detail-comments {
+        background: var(--app-surface-muted);
+        border: 1px solid var(--blog-card-border);
+        border-radius: 6px;
+        padding: 16px;
+    }
+
+    .comment-item {
+        background: var(--app-surface);
+        border: 1px solid var(--blog-divider);
+        border-radius: 4px;
+        padding: 12px 14px !important;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--blog-divider) !important;
+    }
+
+    /* ── 朋友圈 ── */
+    .moment-panel {
+        border-color: var(--blog-card-border);
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .moment-card:hover .moment-panel {
+        border-color: color-mix(in srgb, var(--blog-link) 40%, var(--blog-card-border));
+        box-shadow:
+            var(--app-shadow-card),
+            0 10px 28px rgba(15, 23, 42, 0.1);
+    }
+
+    .moment-text {
+        color: var(--app-text-primary);
+    }
+
+    .moment-kind,
+    .moment-date,
+    .moment-stats {
+        color: var(--app-text-muted);
+    }
+
+    .feed-head {
+        padding: 14px 16px;
+        background: var(--app-surface);
+        border: 1px solid var(--blog-card-border);
+        border-radius: 4px;
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .feed-head p {
+        color: var(--app-text-secondary);
+    }
+
+    .gallery-item {
+        border-color: var(--blog-card-border);
+    }
+
+    .gallery-empty {
+        color: var(--app-text-muted);
+        border-color: var(--blog-card-border);
+    }
+
+    .moment-foot {
+        border-top-color: var(--blog-divider);
+    }
+
+    /* ── 留言板 ── */
+    .guestbook-hero {
+        padding: 18px 20px;
+        background: var(--app-surface);
+        border: 1px solid var(--blog-card-border);
+        border-radius: 4px;
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .hero-stats {
+        border-color: var(--blog-card-border);
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .hero-copy > p:last-child {
+        color: var(--app-text-secondary);
+    }
+
+    .message-composer,
+    .message-stream,
+    .side-panel {
+        border-color: var(--blog-card-border);
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .message-textarea {
+        background: var(--app-surface);
+        border-color: var(--blog-input-border);
+        color: var(--app-text-primary);
+    }
+
+    .field-item span {
+        color: var(--app-text-muted);
+    }
+
+    .field-item input {
+        border-color: var(--blog-input-border);
+        background: var(--app-surface);
+    }
+
+    .message-body,
+    .reply-content p {
+        color: var(--app-text-primary);
+    }
+
+    .message-meta time,
+    .reply-meta span,
+    .reply-meta time {
+        color: var(--app-text-muted);
+    }
+
+    .message-card {
+        border-bottom-color: var(--blog-divider);
+    }
+
+    .message-card:hover {
+        background: color-mix(in srgb, var(--blog-link) 4%, var(--app-surface));
+    }
+
+    .reply-list {
+        border-left-color: var(--blog-card-border);
+    }
+
+    .reply-item + .reply-item {
+        border-top-color: var(--blog-divider);
+    }
+
+    .rule-list li,
+    .side-panel p {
+        color: var(--app-text-secondary);
+    }
+
+    /* ── 侧栏组件 ── */
+    .box,
+    .widget {
+        background: var(--app-surface);
+        border: 1px solid var(--blog-card-border);
+        border-radius: 4px;
+        padding: 14px 12px 16px;
+        box-shadow: var(--app-shadow-card);
+    }
+
+    .widget-title {
+        border-bottom-color: var(--blog-divider);
+        color: var(--app-text-primary);
+    }
+}

@@ -125,7 +125,7 @@ const quickLinks = [
   grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--blog-divider);
   border-bottom: 1px solid var(--blog-divider);
-  background: color-mix(in srgb, var(--app-surface) 86%, transparent);
+  background: var(--app-surface);
 }
 
 .stat-item {
@@ -219,7 +219,7 @@ const quickLinks = [
 .post-entry:hover {
   padding-left: 14px;
   padding-right: 14px;
-  background: rgba(43, 108, 176, 0.055);
+  background: color-mix(in srgb, var(--blog-link) 7%, var(--app-surface));
 }
 
 .post-date {

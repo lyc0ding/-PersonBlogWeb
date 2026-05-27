@@ -209,7 +209,7 @@ onMounted(loadMoments)
   background: var(--app-surface);
   border: 1px solid var(--blog-card-border);
   border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--app-shadow-card, 0 10px 28px rgba(15, 23, 42, 0.04));
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 

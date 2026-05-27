@@ -21,7 +21,11 @@ body {
 }
 
 ::selection {
-    background: rgba(43, 108, 176, 0.22);
+    background: rgba(37, 99, 168, 0.24);
+}
+
+html:not(.dark) ::selection {
+    background: rgba(37, 99, 168, 0.2);
 }
 
 html.dark ::selection {
