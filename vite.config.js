@@ -25,6 +25,9 @@ export default defineConfig({
         target: 'http://localhost:5959',
         // 去掉url 上的 /api
         rewrite: path => path.replace(/^\/api/, '')
+      },
+      '/files': {
+        target: 'http://localhost:5959'
       }
     }
   },

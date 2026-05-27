@@ -1,28 +1,5 @@
 <template>
   <div class="guestbook-page">
-    <section class="guestbook-hero" aria-label="留言板概览">
-      <div class="hero-copy">
-        <p class="eyebrow">GUESTBOOK</p>
-        <h1>留言板</h1>
-        <p>
-          写下想法、问题或一句问候。这里会按时间展示公开留言，也可以直接回复某一条消息。
-        </p>
-      </div>
-      <div class="hero-stats" aria-label="留言统计">
-        <div>
-          <strong>{{ displayNumber(stats.messageCount, total) }}</strong>
-          <span>公开留言</span>
-        </div>
-        <div>
-          <strong>{{ displayNumber(stats.replyCount, localReplyCount) }}</strong>
-          <span>回复讨论</span>
-        </div>
-        <div>
-          <strong>{{ displayNumber(stats.participantCount, '-') }}</strong>
-          <span>参与访客</span>
-        </div>
-      </div>
-    </section>
 
     <div class="guestbook-layout">
       <main class="guestbook-main">
@@ -72,13 +49,31 @@
             <label class="field-item field-item--avatar">
               <span><el-icon><Picture /></el-icon>头像</span>
               <div class="avatar-field">
-                <CommentAvatar :src="form.avatar" :name="form.nickname" size="sm" />
-                <input
-                  v-model="form.avatar"
-                  type="url"
-                  maxlength="512"
-                  placeholder="头像图片链接，可留空"
-                >
+                <CommentAvatar :src="composerAvatarSrc" :name="form.nickname" size="sm" />
+                <div class="avatar-picker">
+                  <div class="avatar-picker__controls">
+                    <input
+                      v-model="form.avatar"
+                      type="text"
+                      maxlength="255"
+                      readonly
+                      placeholder="请选择本地头像图片，可留空"
+                    >
+                    <input
+                      ref="avatarInput"
+                      class="avatar-picker__file"
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      @change="handleAvatarChange"
+                    >
+                    <el-button plain @click="chooseAvatar">
+                      选择
+                    </el-button>
+                    <el-button v-if="form.avatar" text @click="clearAvatar">
+                      清除
+                    </el-button>
+                  </div>
+                </div>
               </div>
             </label>
           </div>
@@ -176,7 +171,7 @@
                     type="button"
                     @click="toggleReply(message.id)"
                   >
-                    {{ message.isExpanded ? '收起回复' : `展开全部 ${message.replyList.length} 条回复` }}
+                    {{ message.isExpanded ? '收起回复' : `展开其余 ${message.replyList.length - replyPreviewLimit} 条回复` }}
                   </button>
                 </div>
               </div>
@@ -202,7 +197,7 @@
           <div>
             <p class="eyebrow">ABOUT</p>
             <h2>Lycoding</h2>
-            <p>欢迎在这里交流技术、博客内容和生活片段。</p>
+            <p>写下想法、问题或一句问候。这里会按时间展示公开留言，也可以直接回复某一条消息。</p>
           </div>
         </section>
 
@@ -212,7 +207,7 @@
             <li>昵称、邮箱和内容为必填项。</li>
             <li>请保持话题清晰，避免重复提交。</li>
             <li>网站地址会作为个人主页链接展示。</li>
-            <li>头像链接会展示在留言旁，并保存在本机资料中。</li>
+            <li>头像可选择本地图片，发布时上传并保存在本机资料中。</li>
             <li>可对留言添加表情反应，同一设备仅保留一个反应。</li>
           </ul>
         </section>
@@ -236,7 +231,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   ChatDotRound,
@@ -249,6 +244,7 @@ import {
   Refresh,
   User,
 } from '@element-plus/icons-vue'
+import { uploadImageService, resolveUploadUrl } from '@/api/admin/upload'
 import {
   commentGuestbookStatsService,
   commentPageService,
@@ -263,7 +259,7 @@ import {
   saveCommentProfile,
 } from '@/utils/commentProfile'
 
-const replyPreviewLimit = 2
+const replyPreviewLimit = 1
 const loading = ref(false)
 const submitting = ref(false)
 const error = ref('')
@@ -272,6 +268,9 @@ const messageContents = ref([])
 const replyTarget = ref(null)
 const replyRoot = ref(null)
 const contentInput = ref(null)
+const avatarInput = ref(null)
+const selectedAvatarFile = ref(null)
+const avatarPreviewUrl = ref('')
 
 const query = reactive({
   pageNum: 1,
@@ -294,6 +293,8 @@ const form = reactive({
   website: savedProfile.website,
   avatar: savedProfile.avatar,
 })
+
+const composerAvatarSrc = computed(() => avatarPreviewUrl.value || form.avatar)
 
 const localReplyCount = computed(() => {
   return messageContents.value.reduce((count, item) => count + (item.replyList?.length || 0), 0)
@@ -349,7 +350,7 @@ async function submitComment() {
   const nickname = form.nickname.trim()
   const email = form.email.trim()
   const website = normalizeWebsite(form.website)
-  const avatar = form.avatar.trim()
+  let avatar = form.avatar.trim()
 
   if (!content) {
     ElMessage.warning('请填写留言内容')
@@ -359,18 +360,27 @@ async function submitComment() {
     ElMessage.warning('请填写昵称')
     return
   }
-  if (!email) {
-    ElMessage.warning('请填写邮箱')
-    return
-  }
-  if (!isEmail(email)) {
-    ElMessage.warning('请填写有效邮箱')
-    return
-  }
+//   if (!email) {
+//     ElMessage.warning('请填写邮箱')
+//     return
+//   }
+//   if (!isEmail(email)) {
+//     ElMessage.warning('请填写有效邮箱')
+//     return
+//   }
 
   const isReplying = Boolean(replyTarget.value)
   submitting.value = true
   try {
+    if (selectedAvatarFile.value) {
+      avatar = await uploadAvatar(selectedAvatarFile.value)
+      form.avatar = avatar
+      selectedAvatarFile.value = null
+      revokeAvatarPreview()
+      if (avatarInput.value) {
+        avatarInput.value.value = ''
+      }
+    }
     await commentSubmitService({
       content,
       nickname,
@@ -395,6 +405,15 @@ async function submitComment() {
   } finally {
     submitting.value = false
   }
+}
+
+async function uploadAvatar(file) {
+  const res = await uploadImageService(file, 'avatar')
+  const url = resolveUploadUrl(res)
+  if (!url) {
+    throw new Error('头像上传失败，服务端未返回图片路径')
+  }
+  return normalizeUploadPath(url)
 }
 
 function startReply(root, target) {
@@ -441,6 +460,65 @@ function insertEmoji(emoji) {
   })
 }
 
+function chooseAvatar() {
+  avatarInput.value?.click()
+}
+
+function handleAvatarChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  if (!/^image\//.test(file.type)) {
+    ElMessage.warning('请选择图片文件')
+    event.target.value = ''
+    return
+  }
+  const maxSize = 5 * 1024 * 1024
+  if (file.size > maxSize) {
+    ElMessage.warning('头像图片不能超过 5MB')
+    event.target.value = ''
+    return
+  }
+
+  selectedAvatarFile.value = file
+  form.avatar = buildAvatarDisplayPath(file)
+  revokeAvatarPreview()
+  avatarPreviewUrl.value = URL.createObjectURL(file)
+}
+
+function clearAvatar() {
+  selectedAvatarFile.value = null
+  form.avatar = ''
+  revokeAvatarPreview()
+  if (avatarInput.value) {
+    avatarInput.value.value = ''
+  }
+}
+
+function buildAvatarDisplayPath(file) {
+  const path = file.webkitRelativePath || file.name
+  return path.startsWith('.') || path.startsWith('/') ? path : `./${path}`
+}
+
+function normalizeUploadPath(value = '') {
+  const path = String(value || '').trim()
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) {
+    try {
+      return new URL(path).pathname
+    } catch {
+      return path
+    }
+  }
+  return path.startsWith('/') ? path : `/${path}`
+}
+
+function revokeAvatarPreview() {
+  if (avatarPreviewUrl.value) {
+    URL.revokeObjectURL(avatarPreviewUrl.value)
+    avatarPreviewUrl.value = ''
+  }
+}
+
 function resolveAvatar(item) {
   return resolveCommentAvatar(item)
 }
@@ -474,6 +552,7 @@ function readErrorMessage(err, fallback) {
 }
 
 onMounted(refreshGuestbook)
+onBeforeUnmount(revokeAvatarPreview)
 </script>
 
 <style scoped>
@@ -481,19 +560,6 @@ onMounted(refreshGuestbook)
   width: var(--blog-content-width);
   margin: 0 auto;
   padding: 0 0 56px;
-}
-
-.guestbook-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.55fr);
-  gap: 28px;
-  align-items: stretch;
-  padding: 12px 0 28px;
-  border-bottom: 1px solid var(--blog-divider);
-}
-
-.hero-copy {
-  min-width: 0;
 }
 
 .eyebrow,
@@ -505,54 +571,7 @@ onMounted(refreshGuestbook)
   letter-spacing: 0.14em;
 }
 
-.hero-copy h1 {
-  margin: 8px 0 12px;
-  color: var(--app-text-primary);
-  font-size: clamp(2.1rem, 5vw, 4.2rem);
-  font-weight: 780;
-  line-height: 1.05;
-}
 
-.hero-copy > p:last-child {
-  max-width: 620px;
-  margin: 0;
-  color: var(--app-text-secondary);
-  font-size: 16px;
-  line-height: 1.9;
-}
-
-.hero-stats {
-  display: grid;
-  grid-template-columns: 1fr;
-  border: 1px solid var(--blog-divider);
-  background: var(--app-surface);
-}
-
-.hero-stats > div {
-  min-height: 94px;
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  border-bottom: 1px solid var(--blog-divider);
-}
-
-.hero-stats > div:last-child {
-  border-bottom: 0;
-}
-
-.hero-stats strong {
-  color: var(--app-text-primary);
-  font-size: 2rem;
-  font-weight: 760;
-  line-height: 1.1;
-}
-
-.hero-stats span {
-  margin-top: 8px;
-  color: var(--app-text-muted);
-  font-size: 14px;
-}
 
 .guestbook-layout {
   display: grid;
@@ -685,11 +704,26 @@ onMounted(refreshGuestbook)
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 10px;
+  align-items: start;
+}
+
+.avatar-picker {
+  min-width: 0;
+}
+
+.avatar-picker__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
   align-items: center;
 }
 
-.avatar-field input {
-  min-width: 0;
+.avatar-picker__file {
+  display: none;
+}
+
+.avatar-picker__controls :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 
 .composer-actions {
@@ -954,48 +988,14 @@ onMounted(refreshGuestbook)
 }
 
 @media (max-width: 1020px) {
-  .guestbook-hero,
   .guestbook-layout {
     grid-template-columns: 1fr;
-  }
-
-  .hero-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .hero-stats > div {
-    border-right: 1px solid var(--blog-divider);
-    border-bottom: 0;
-  }
-
-  .hero-stats > div:last-child {
-    border-right: 0;
   }
 }
 
 @media (max-width: 720px) {
   .guestbook-page {
     padding-bottom: 42px;
-  }
-
-  .guestbook-hero {
-    gap: 20px;
-    padding-bottom: 22px;
-  }
-
-  .hero-stats,
-  .composer-fields {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-stats > div {
-    min-height: 76px;
-    border-right: 0;
-    border-bottom: 1px solid var(--blog-divider);
-  }
-
-  .hero-stats > div:last-child {
-    border-bottom: 0;
   }
 
   .message-composer,
@@ -1027,6 +1027,10 @@ onMounted(refreshGuestbook)
 
   .reply-item {
     grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .avatar-picker__controls {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .pager-wrap {

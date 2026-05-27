@@ -300,7 +300,7 @@ function resolveCoverUrl(post) {
 }
 
 function resolveCategory(post) {
-  return post.tags?.[0]?.name || '未分类'
+  return post.tags?.[0]?.name != undefined ? '#'+post.tags?.[0]?.name : null
 }
 
 function formatDate(value) {
