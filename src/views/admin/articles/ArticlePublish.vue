@@ -68,7 +68,7 @@ const {
 } = useArticleEditor(() => articleId.value, {
   onSaved: (saved) => {
     if (!route.params.id && saved.id) {
-      router.replace({ name: 'TecArticleEdit', params: { id: saved.id } })
+      router.replace({ name: 'AdminArticleEdit', params: { id: saved.id } })
     }
   },
 })

@@ -60,7 +60,7 @@ const router = useRouter()
 const navItems = [
   { label: '首页', path: '/' },
   { label: '朋友圈', path: '/space' },
-  { label: '文章', path: '/technolyge' },
+  { label: '文章', path: '/articles' },
   { label: '留言板', path: '/comments' },
   { label: '照片', path: '/photos' },
   { label: '关于', path: '/about' },
@@ -75,7 +75,7 @@ const blurTarget = (e) => {
 
 const onSearch = () => {
   if (!keyword.value) return
-  router.push({ path: '/technolyge', query: { q: keyword.value } })
+  router.push({ path: '/articles', query: { q: keyword.value } })
 }
 
 const showDropdown = () => {

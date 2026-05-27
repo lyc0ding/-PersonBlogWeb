@@ -46,9 +46,9 @@
                 <el-icon><Document /></el-icon>
                 <span>文章管理</span>
               </template>
-              <el-menu-item index="/admin/tec/article">文章列表</el-menu-item>
-              <el-menu-item index="/admin/tec/article/add">写文章</el-menu-item>
-              <el-menu-item index="/admin/tec/article/tag">标签管理</el-menu-item>
+              <el-menu-item index="/admin/articles">文章列表</el-menu-item>
+              <el-menu-item index="/admin/articles/new">写文章</el-menu-item>
+              <el-menu-item index="/admin/articles/tags">标签管理</el-menu-item>
             </el-sub-menu>
 
             <el-menu-item index="/admin/timeline">

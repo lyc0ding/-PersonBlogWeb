@@ -8,7 +8,7 @@
       </p>
 
       <div class="hero-actions" aria-label="首页快捷入口">
-        <RouterLink class="hero-link hero-link--primary" to="/technolyge">阅读文章</RouterLink>
+        <RouterLink class="hero-link hero-link--primary" to="/articles">阅读文章</RouterLink>
         <RouterLink class="hero-link" to="/space">看看朋友圈</RouterLink>
       </div>
 

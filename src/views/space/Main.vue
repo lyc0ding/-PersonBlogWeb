@@ -94,7 +94,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import PersonBox from '../../components/sider/Introduction.vue'
+import PersonBox from '@/components/sidebar/BlogProfileCard.vue'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import { timelinePageService } from '@/api/timeline'
 

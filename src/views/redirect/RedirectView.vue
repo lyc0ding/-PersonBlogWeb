@@ -1,4 +1,4 @@
-<!-- components/Redirect.vue -->
+<!-- views/redirect/RedirectView.vue -->
 <template>
   <div></div>
 </template>

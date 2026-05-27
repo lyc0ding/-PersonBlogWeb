@@ -1,11 +1,46 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useTagStore } from '@/stores/tagStore'
+
+const keepQueryRedirect = (path) => (to) => ({
+    path,
+    query: to.query,
+    hash: to.hash,
+})
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
         {
+            path: '/technolyge',
+            redirect: keepQueryRedirect('/articles')
+        },
+        {
+            path: '/links',
+            redirect: '/photos'
+        },
+        {
+            path: '/admin/tec/article',
+            redirect: keepQueryRedirect('/admin/articles')
+        },
+        {
+            path: '/admin/tec/article/add',
+            redirect: keepQueryRedirect('/admin/articles/new')
+        },
+        {
+            path: '/admin/tec/article/edit/:id',
+            redirect: (to) => ({
+                path: `/admin/articles/${to.params.id}/edit`,
+                query: to.query,
+                hash: to.hash,
+            })
+        },
+        {
+            path: '/admin/tec/article/tag',
+            redirect: keepQueryRedirect('/admin/articles/tags')
+        },
+        {
             path: '/',
-            component: () => import('@/views/Index.vue'),
+            component: () => import('@/layouts/PublicLayout.vue'),
             children: [
                 {
                     path: '',
@@ -17,7 +52,7 @@ const router = createRouter({
                     }
                 },
                 {
-                    path: '/space',
+                    path: 'space',
                     name: 'Space',
                     component: () => import('@/views/space/Index.vue'),
                     meta: {
@@ -26,16 +61,16 @@ const router = createRouter({
                     }
                 },
                 {
-                    path: '/technolyge',
-                    name: 'Technolyge',
-                    component: () => import('@/views/community/Index.vue'),
+                    path: 'articles',
+                    name: 'Articles',
+                    component: () => import('@/views/articles/Index.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
                         title: '文章'
                     }
                 },
                 {
-                    path: '/comments',
+                    path: 'comments',
                     name: 'Comments',
                     component: () => import('@/views/comments/Index.vue'),
                     meta: {
@@ -44,29 +79,25 @@ const router = createRouter({
                     }
                 },
                 {
-                    path: '/links',
-                    redirect: '/photos'
-                },
-                {
-                    path: '/photos',
+                    path: 'photos',
                     name: 'Photos',
-                    component: () => import('@/views/FriendsView.vue'),
+                    component: () => import('@/views/photos/Index.vue'),
                     meta: {
                         keepAlive: true,
                         title: '照片'
                     }
                 },
                 {
-                    path: '/about',
-                    name: 'about',
-                    component: () => import('@/views/AboutView.vue'),
+                    path: 'about',
+                    name: 'About',
+                    component: () => import('@/views/about/Index.vue'),
                     meta: {
                         keepAlive: true,
                         title: '关于'
                     }
                 },
                 {
-                    path: '/live',
+                    path: 'live',
                     name: 'Live',
                     component: () => import('@/views/live/Index.vue'),
                     meta: {
@@ -79,7 +110,7 @@ const router = createRouter({
         {
             path: '/admin',
             name: 'Admin',
-            component: () => import('@/views/admin/AdminLayout.vue'),
+            component: () => import('@/layouts/AdminLayout.vue'),
             redirect: '/admin/dashboard',
             meta: {
                 keepAlive: true, // 启用缓存
@@ -89,19 +120,19 @@ const router = createRouter({
                 {
                     path: '/redirect/:path(.*)',
                     name: 'Redirect',
-                    component: () => import('@/components/Redirect.vue')
+                    component: () => import('@/views/redirect/RedirectView.vue')
                 },
                 {
-                    path: '/admin/dashboard',
-                    name: 'DashBoard',
-                    component: () => import('@/views/admin/DashBoard.vue'),
+                    path: 'dashboard',
+                    name: 'Dashboard',
+                    component: () => import('@/views/admin/Dashboard.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
                         title: '首页'
                     },
                 },
                 {
-                    path: '/admin/user',
+                    path: 'user',
                     name: 'User',
                     component: () => import('@/views/admin/User.vue'),
                     meta: {
@@ -110,8 +141,8 @@ const router = createRouter({
                     },
                 },
                 {
-                    path: '/admin/setting',
-                    name: 'setting',
+                    path: 'setting',
+                    name: 'Setting',
                     component: () => import('@/views/admin/Setting.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
@@ -119,43 +150,43 @@ const router = createRouter({
                     },
                 },
                 {
-                    path: '/admin/tec/article',
-                    name: 'TecArticle',
-                    component: () => import('@/views/admin/tec-article/ArticleManage.vue'),
+                    path: 'articles',
+                    name: 'AdminArticles',
+                    component: () => import('@/views/admin/articles/ArticleManage.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
                         title: '文章管理'
                     },
                 },
                 {
-                    path: '/admin/tec/article/add',
-                    name: 'TecArticleAdd',
-                    component: () => import('@/views/admin/tec-article/ArticlePublish.vue'),
+                    path: 'articles/new',
+                    name: 'AdminArticleCreate',
+                    component: () => import('@/views/admin/articles/ArticlePublish.vue'),
                     meta: {
                         keepAlive: false,
                         title: '新增文章'
                     },
                 },
                 {
-                    path: '/admin/tec/article/edit/:id',
-                    name: 'TecArticleEdit',
-                    component: () => import('@/views/admin/tec-article/ArticlePublish.vue'),
+                    path: 'articles/:id/edit',
+                    name: 'AdminArticleEdit',
+                    component: () => import('@/views/admin/articles/ArticlePublish.vue'),
                     meta: {
                         keepAlive: false,
                         title: '编辑文章'
                     },
                 },
                 {
-                    path: '/admin/tec/article/tag',
-                    name: 'Tag',
-                    component: () => import('@/views/admin/tec-article/TagManage.vue'),
+                    path: 'articles/tags',
+                    name: 'AdminArticleTags',
+                    component: () => import('@/views/admin/articles/TagManage.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存  
                         title: '标签管理'
                     },
                 },
                 {
-                    path: '/admin/timeline',
+                    path: 'timeline',
                     name: 'TimelineManage',
                     component: () => import('@/views/admin/TimelineManage.vue'),
                     meta: {
@@ -164,7 +195,7 @@ const router = createRouter({
                     },
                 },
                 {
-                    path: '/admin/comment',
+                    path: 'comment',
                     name: 'CommentManage',
                     component: () => import('@/views/admin/CommentManage.vue'),
                     meta: {
@@ -175,9 +206,13 @@ const router = createRouter({
             ]
         },
         {
+            path: '/lab/article-editor',
+            name: 'ArticleEditorDemo',
+            component: () => import('@/views/lab/ArticleEditorDemo.vue'),
+        },
+        {
             path: '/test',
-            name: '测试',
-            component: () => import('@/views/test/ArticleEditor.vue'),
+            redirect: '/lab/article-editor',
         }
     ],
 

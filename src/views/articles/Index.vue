@@ -18,8 +18,8 @@
 </template>
 
 <script setup>
-import TagCloud from '../../components/sider/TagCloud.vue'
-import Introduction from '@/components/sider/Introduction.vue'
+import TagCloud from '@/components/sidebar/TagCloud.vue'
+import Introduction from '@/components/sidebar/BlogProfileCard.vue'
 import Banner from './Banner.vue'
 import Main from './Main.vue'
 </script>

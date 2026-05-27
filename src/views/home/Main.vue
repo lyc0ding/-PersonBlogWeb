@@ -19,7 +19,7 @@
             v-for="post in recentPosts"
             :key="post.title"
             class="post-entry"
-            to="/technolyge"
+            to="/articles"
           >
             <span class="post-date">{{ post.date }}</span>
             <div class="post-body">
@@ -106,7 +106,7 @@ const nowItems = [
 ]
 
 const quickLinks = [
-  { title: '文章', desc: '技术笔记与经验整理', path: '/technolyge' },
+  { title: '文章', desc: '技术笔记与经验整理', path: '/articles' },
   { title: '朋友圈', desc: '图片、文字和近期动态', path: '/space' },
   { title: '留言板', desc: '留下想法或交流问题', path: '/comments' },
   { title: '关于', desc: '了解这个博客和博主', path: '/about' },

@@ -120,11 +120,11 @@ async function loadList() {
 }
 
 function goCreate() {
-  router.push({ name: 'TecArticleAdd' })
+  router.push({ name: 'AdminArticleCreate' })
 }
 
 function goEdit(id) {
-  router.push({ name: 'TecArticleEdit', params: { id } })
+  router.push({ name: 'AdminArticleEdit', params: { id } })
 }
 
 async function toggleStatus(row) {

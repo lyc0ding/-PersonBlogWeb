@@ -1,12 +1,12 @@
 <template>
-  <MyPet />
+  <PetDog />
   <RouterView />
 </template>
 
 <script setup>
 import { RouterView } from 'vue-router'
 import { useThemeStore } from '@/stores/themeStore'
-import MyPet from './components/pet/MyPet.vue';
+import PetDog from '@/components/pet/PetDog.vue'
 
 const themeStore = useThemeStore()
 themeStore.init()

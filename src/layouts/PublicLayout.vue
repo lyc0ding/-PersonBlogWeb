@@ -17,13 +17,13 @@
             </router-view>
         </main>
 
-        <ToolsBtn></ToolsBtn>
+        <FloatingTools />
     </div>
 </template>
 
 <script setup>
-import Nav from '@/components/nav/TopNav.vue';
-import ToolsBtn from '@/components/global/ToolsBtn.vue';
+import Nav from '@/components/nav/TopNav.vue'
+import FloatingTools from '@/components/layout/FloatingTools.vue'
 </script>
 
 <style lang="scss" scoped>
