@@ -24,3 +24,20 @@ export function configListService(group) {
     params: group ? { group } : undefined,
   })
 }
+
+/** GET /system/about */
+export function aboutDetailService() {
+  return request({
+    url: '/system/about',
+    method: 'get',
+  })
+}
+
+/** PUT /system/about */
+export function aboutSaveService(data) {
+  return request({
+    url: '/system/about',
+    method: 'put',
+    data,
+  })
+}

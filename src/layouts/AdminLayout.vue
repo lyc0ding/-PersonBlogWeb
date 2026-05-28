@@ -61,6 +61,11 @@
               <template #title>留言评论</template>
             </el-menu-item>
 
+            <el-menu-item index="/admin/about">
+              <el-icon><Memo /></el-icon>
+              <template #title>关于页面</template>
+            </el-menu-item>
+
             <el-menu-item index="/admin/user">
               <el-icon><User /></el-icon>
               <template #title>用户管理</template>
@@ -99,6 +104,7 @@ import {
   Fold,
   House,
   ChatDotRound,
+  Memo,
   Picture,
   Setting,
   User,

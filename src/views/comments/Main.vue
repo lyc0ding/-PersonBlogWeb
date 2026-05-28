@@ -7,17 +7,8 @@
           <div class="section-heading">
             <div>
               <p>LEAVE A MESSAGE</p>
-              <h2>{{ replyTarget ? `回复 ${replyTarget.nickname}` : '留下你的留言' }}</h2>
+              <h2>留下你的留言</h2>
             </div>
-            <el-button v-if="replyTarget" text @click="cancelReply">
-              <el-icon><Close /></el-icon>
-              取消回复
-            </el-button>
-          </div>
-
-          <div v-if="replyTarget" class="reply-banner">
-            <el-icon><ChatDotRound /></el-icon>
-            <span>正在回复 @{{ replyTarget.nickname }}</span>
           </div>
 
           <div class="composer-toolbar">
@@ -30,7 +21,7 @@
             v-model="form.content"
             class="message-textarea"
             maxlength="2000"
-            :placeholder="replyTarget ? `回复 @${replyTarget.nickname}，写下你的想法` : '分享一个问题、建议或最近想聊的话题'"
+            placeholder="分享一个问题、建议或最近想聊的话题"
           />
 
           <div class="composer-fields">
@@ -82,7 +73,7 @@
             <span>{{ form.content.length }}/2000</span>
             <el-button type="primary" :loading="submitting" @click="submitComment">
               <el-icon><Promotion /></el-icon>
-              {{ replyTarget ? '发布回复' : '发布留言' }}
+              发布留言
             </el-button>
           </div>
         </section>
@@ -117,6 +108,7 @@
                 :src="resolveAvatar(message)"
                 :name="message.nickname"
                 size="md"
+                @click="previewAvatar()"
               />
 
               <div class="message-content">
@@ -136,7 +128,30 @@
 
                 <div class="message-tools">
                   <span><el-icon><Location /></el-icon>{{ displayLocation(message) }}</span>
-                  <button type="button" @click="startReply(message, message)">回复</button>
+                  <button type="button" @click="openInlineReply(message, null)">回复</button>
+                </div>
+
+                <!-- 内嵌回复框 -->
+                <div v-if="inlineReplyTarget && inlineReplyRoot.id === message.id" class="inline-reply-box">
+                  <div class="inline-reply-header">
+                    <el-icon><ChatDotRound /></el-icon>
+                    <span>回复 @{{ inlineReplyTarget.nickname }}</span>
+                  </div>
+                  <textarea
+                    v-model="inlineForm.content"
+                    class="inline-textarea"
+                    maxlength="2000"
+                    placeholder="写下你的回复"
+                  />
+                  <div class="inline-reply-actions">
+                    <span>{{ inlineForm.content.length }}/2000</span>
+                    <div>
+                      <el-button text @click="closeInlineReply">取消</el-button>
+                      <el-button type="primary" :loading="inlineSubmitting" @click="submitInlineReply">
+                        发布回复
+                      </el-button>
+                    </div>
+                  </div>
                 </div>
 
                 <div v-if="message.replyList?.length" class="reply-list">
@@ -160,7 +175,7 @@
                       <CommentReactionBar :comment-id="reply.id" />
                       <div class="message-tools">
                         <span><el-icon><Location /></el-icon>{{ displayLocation(reply) }}</span>
-                        <button type="button" @click="startReply(message, reply)">回复</button>
+                        <button type="button" @click="openInlineReply(message, reply)">回复</button>
                       </div>
                     </div>
                   </article>
@@ -258,19 +273,27 @@ import {
   resolveCommentAvatar,
   saveCommentProfile,
 } from '@/utils/commentProfile'
+import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 
 const replyPreviewLimit = 1
 const loading = ref(false)
 const submitting = ref(false)
+const inlineSubmitting = ref(false)
 const error = ref('')
 const total = ref(0)
 const messageContents = ref([])
-const replyTarget = ref(null)
-const replyRoot = ref(null)
 const contentInput = ref(null)
 const avatarInput = ref(null)
 const selectedAvatarFile = ref(null)
 const avatarPreviewUrl = ref('')
+const showBigAvatar = ref(false)
+
+// 内嵌回复状态
+const inlineReplyRoot = ref(null)
+const inlineReplyTarget = ref(null)
+const inlineForm = reactive({
+  content: ''
+})
 
 const query = reactive({
   pageNum: 1,
@@ -299,6 +322,57 @@ const composerAvatarSrc = computed(() => avatarPreviewUrl.value || form.avatar)
 const localReplyCount = computed(() => {
   return messageContents.value.reduce((count, item) => count + (item.replyList?.length || 0), 0)
 })
+
+// 打开内嵌回复
+function openInlineReply(root, target) {
+  inlineReplyRoot.value = root
+  inlineReplyTarget.value = target || root
+  inlineForm.content = ''
+}
+
+// 关闭内嵌回复
+function closeInlineReply() {
+  inlineReplyRoot.value = null
+  inlineReplyTarget.value = null
+  inlineForm.content = ''
+}
+
+// 提交内嵌回复
+async function submitInlineReply() {
+  const content = inlineForm.content.trim()
+  const nickname = form.nickname?.trim()
+  const email = form.email?.trim()
+
+  if (!content) {
+    ElMessage.warning('请填写回复内容')
+    return
+  }
+  if (!nickname) {
+    ElMessage.warning('请先在顶部填写昵称')
+    return
+  }
+
+  inlineSubmitting.value = true
+  try {
+    await commentSubmitService({
+      content,
+      nickname,
+      email,
+      website: normalizeWebsite(form.website),
+      avatar: form.avatar,
+      parentId: inlineReplyRoot.value.id,
+      replyToId: inlineReplyTarget.value.id,
+    })
+    saveCommentProfile({ nickname, email, website: form.website, avatar: form.avatar })
+    ElMessage.success('回复发布成功')
+    closeInlineReply()
+    await refreshGuestbook()
+  } catch (err) {
+    ElMessage.error(readErrorMessage(err, '回复提交失败'))
+  } finally {
+    inlineSubmitting.value = false
+  }
+}
 
 async function refreshGuestbook() {
   await Promise.all([loadComments(), loadStats()])
@@ -345,6 +419,7 @@ async function loadStats() {
   }
 }
 
+// 顶部发布留言（原逻辑不变）
 async function submitComment() {
   const content = form.content.trim()
   const nickname = form.nickname.trim()
@@ -360,16 +435,7 @@ async function submitComment() {
     ElMessage.warning('请填写昵称')
     return
   }
-//   if (!email) {
-//     ElMessage.warning('请填写邮箱')
-//     return
-//   }
-//   if (!isEmail(email)) {
-//     ElMessage.warning('请填写有效邮箱')
-//     return
-//   }
 
-  const isReplying = Boolean(replyTarget.value)
   submitting.value = true
   try {
     if (selectedAvatarFile.value) {
@@ -387,18 +453,14 @@ async function submitComment() {
       email,
       website,
       avatar,
-      parentId: replyRoot.value?.id ?? 0,
-      replyToId: replyTarget.value?.id ?? null,
+      parentId: 0,
+      replyToId: null,
     })
     saveCommentProfile({ nickname, email, website, avatar })
     form.content = ''
     form.website = website
     form.avatar = avatar
-    cancelReply()
-    if (!isReplying) {
-      query.pageNum = 1
-    }
-    ElMessage.success(isReplying ? '回复发布成功' : '留言发布成功')
+    ElMessage.success('留言发布成功')
     await refreshGuestbook()
   } catch (err) {
     ElMessage.error(readErrorMessage(err, '留言提交失败，请检查后端接口'))
@@ -414,20 +476,6 @@ async function uploadAvatar(file) {
     throw new Error('头像上传失败，服务端未返回图片路径')
   }
   return normalizeUploadPath(url)
-}
-
-function startReply(root, target) {
-  replyRoot.value = root
-  replyTarget.value = target
-  nextTick(() => {
-    contentInput.value?.focus()
-    contentInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  })
-}
-
-function cancelReply() {
-  replyRoot.value = null
-  replyTarget.value = null
 }
 
 function toggleReply(messageId) {
@@ -500,16 +548,13 @@ function buildAvatarDisplayPath(file) {
 }
 
 function normalizeUploadPath(value = '') {
-  const path = String(value || '').trim()
-  if (!path) return ''
-  if (/^https?:\/\//i.test(path)) {
-    try {
-      return new URL(path).pathname
-    } catch {
-      return path
-    }
+  if (!value) return ''
+  let path = String(value).trim().replace(/\\/g, '/')
+  path = path.replace(/\/+/g, '/')
+  if (!path.startsWith('/')) {
+    path = '/' + path
   }
-  return path.startsWith('/') ? path : `/${path}`
+  return path
 }
 
 function revokeAvatarPreview() {
@@ -571,8 +616,6 @@ onBeforeUnmount(revokeAvatarPreview)
   letter-spacing: 0.14em;
 }
 
-
-
 .guestbook-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -618,19 +661,6 @@ onBeforeUnmount(revokeAvatarPreview)
 .stream-heading {
   padding-bottom: 14px;
   border-bottom: 1px solid var(--blog-divider);
-}
-
-.reply-banner {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 100%;
-  margin-bottom: 12px;
-  padding: 8px 10px;
-  color: var(--blog-link);
-  background: color-mix(in srgb, var(--blog-link) 9%, transparent);
-  border: 1px solid color-mix(in srgb, var(--blog-link) 18%, transparent);
-  font-size: 14px;
 }
 
 .message-textarea {
@@ -845,6 +875,49 @@ onBeforeUnmount(revokeAvatarPreview)
 .message-tools button:hover,
 .reply-toggle:hover {
   color: var(--blog-link-hover);
+}
+
+/* 内嵌回复框样式 */
+.inline-reply-box {
+  margin: 12px 0 0;
+  padding: 12px;
+  background: var(--app-surface-muted);
+  border: 1px solid var(--blog-divider);
+  border-radius: 8px;
+}
+.inline-reply-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: var(--blog-link);
+  font-size: 14px;
+}
+.inline-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 1px solid var(--blog-input-border);
+  background: var(--app-surface);
+  color: var(--app-text-primary);
+  font: inherit;
+  line-height: 1.6;
+  box-sizing: border-box;
+  border-radius: 6px;
+  resize: vertical;
+}
+.inline-textarea:focus {
+  outline: none;
+  border-color: var(--blog-link);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blog-link) 14%, transparent);
+}
+.inline-reply-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--app-text-muted);
 }
 
 .reply-list {

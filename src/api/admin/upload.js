@@ -36,7 +36,7 @@ export function uploadImagesService(files, bizType = 'content') {
   })
 }
 
-/** 从统一响应体解析 URL（兼容多种后端封装） */
+/** 从统一响应体解析） */
 export function resolveUploadUrl(res) {
   if (!res) return ''
   if (typeof res === 'string') return res

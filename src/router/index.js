@@ -195,6 +195,15 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: 'about',
+                    name: 'AboutManage',
+                    component: () => import('@/views/admin/AboutManage.vue'),
+                    meta: {
+                        keepAlive: true,
+                        title: '关于页面'
+                    },
+                },
+                {
                     path: 'comment',
                     name: 'CommentManage',
                     component: () => import('@/views/admin/CommentManage.vue'),
