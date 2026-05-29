@@ -195,6 +195,15 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: 'photos',
+                    name: 'PhotoManage',
+                    component: () => import('@/views/admin/PhotoManage.vue'),
+                    meta: {
+                        keepAlive: true,
+                        title: '照片管理'
+                    },
+                },
+                {
                     path: 'about',
                     name: 'AboutManage',
                     component: () => import('@/views/admin/AboutManage.vue'),

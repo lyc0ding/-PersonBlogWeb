@@ -4,7 +4,7 @@ import request from '@/utils/request'
  * 上传图片（对接 Spring Boot MultipartFile）
  * POST /upload/image
  * @param {File} file
- * @param {'cover'|'content'|'avatar'} [bizType]
+ * @param {'cover'|'content'|'avatar'|'photo'} [bizType]
  */
 export function uploadImageService(file, bizType = 'content') {
   const formData = new FormData()

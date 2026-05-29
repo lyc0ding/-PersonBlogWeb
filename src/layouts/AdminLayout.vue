@@ -56,6 +56,11 @@
               <template #title>朋友圈管理</template>
             </el-menu-item>
 
+            <el-menu-item index="/admin/photos">
+              <el-icon><PictureFilled /></el-icon>
+              <template #title>照片管理</template>
+            </el-menu-item>
+
             <el-menu-item index="/admin/comment">
               <el-icon><ChatDotRound /></el-icon>
               <template #title>留言评论</template>
@@ -106,6 +111,7 @@ import {
   ChatDotRound,
   Memo,
   Picture,
+  PictureFilled,
   Setting,
   User,
 } from '@element-plus/icons-vue'

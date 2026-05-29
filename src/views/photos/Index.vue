@@ -13,6 +13,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import * as THREE from 'three'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
+import { photoPageService } from '@/api/photo'
 import avatarUrl from '@/assets/img/avatar.png'
 import bac1Url from '@/assets/img/bac1.jpg'
 import imageUrl from '@/assets/img/image.png'
@@ -74,7 +75,7 @@ const remotePhotos = [
   'https://picsum.photos/id/39/800/800',
 ]
 
-const photos = [...localPhotos, ...remotePhotos].map((src) => ({ src }))
+let photos = [...localPhotos, ...remotePhotos].map((src) => ({ src }))
 
 const gentleCurveFactor = 2.8 // 圆柱弧度，略平一些便于铺满视野
 const worldHeight = 10
@@ -104,6 +105,7 @@ let buildVersion = 0
 
 onMounted(() => {
   initScene()
+  loadPhotos()
 })
 
 onBeforeUnmount(() => {
@@ -187,6 +189,33 @@ function rebuildCylinder(containerWidth, containerHeight) {
 
   const layout = computePhotoLayout(containerHeight)
   addPhotos(radius, height, layout)
+}
+
+async function loadPhotos() {
+  try {
+    const res = await photoPageService({
+      pageNum: 1,
+      pageSize: 120,
+      photoType: 'photo',
+    })
+    const page = res?.data ?? res ?? {}
+    const records = page.records ?? page.list ?? []
+    const managedPhotos = records
+      .map((item) => ({
+        src: item.imageUrl || item.url || item.src,
+        title: item.title || '',
+      }))
+      .filter((item) => item.src)
+
+    if (!managedPhotos.length || disposed) return
+
+    photos = managedPhotos
+    if (lastSize.width && lastSize.height) {
+      rebuildCylinder(lastSize.width, lastSize.height)
+    }
+  } catch (err) {
+    console.warn('[photos] 照片管理接口不可用，使用默认照片墙', err)
+  }
 }
 
 function computePhotoLayout(containerHeight) {
