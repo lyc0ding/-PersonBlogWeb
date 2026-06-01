@@ -236,29 +236,9 @@ const router = createRouter({
 
 })
 
-// 模拟网络延迟函数
-const simulateNetworkDelay = (delay = 5000) => {
-    return new Promise((resolve) => {
-        setTimeout(() => resolve(), delay);
-    });
-};
-
-// 路由守卫
-// router.beforeEach(async (to, from, next) => {
-//   start(); // 启动进度条
-
-//   // 对特定路由模拟卡顿（示例：/admin 路由）
-//   // if (to.path === "/admin" || to.path === "/live") {
-//   //   await simulateNetworkDelay(2000); // 阻塞 2 秒
-//   //   nProgress.set(0.8); // 模拟加载到 80% 卡住
-//   // }
-
-//   next(); // 放行路由
-// });
-
-// router.afterEach(() => {
-//   done(); // 结束进度条
-// });
+router.afterEach(() => {
+    done(); // 结束进度条
+});
 
 
 router.beforeEach((to, from) => {

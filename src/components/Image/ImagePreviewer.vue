@@ -46,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 
 // 组件属性
 const props = defineProps({
@@ -65,11 +65,20 @@ const isDragging = ref(false);
 const startDragPosition = ref({ x: 0, y: 0 });
 const previewImage = ref(null);
 
+// ============= 核心修复：打开时自动缩放到适合屏幕 =============
+watch(() => props.showPreview, (val) => {
+  if (val) {
+    reset();
+  }
+});
+
 // 图片样式计算
 const imageStyle = computed(() => {
   return {
     transform: `scale(${scale.value}) rotate(${rotate.value}deg) translate(${position.value.x}px, ${position.value.y}px)`,
-    cursor: isDragging.value ? 'grabbing' : 'grab'
+    cursor: isDragging.value ? 'grabbing' : 'grab',
+    maxWidth: '90%',  // 限制最大宽度
+    maxHeight: '90%', // 限制最大高度
   };
 });
 
@@ -186,8 +195,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
 .preview-content {
   position: relative;
   z-index: 1001;
-  max-width: 80vw;
-  max-height: 80vh;
+  width: 95vw;
+  height: 95vh;
   display: flex;
   flex-direction: column;
   background-color: var(--app-surface);
@@ -230,9 +239,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
 
 /* 图片容器 */
 .image-container {
-  padding: 20px;
-  max-width: 100%;
-  max-height: calc(90vh - 70px);
+  flex: 1;
+  padding: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -241,9 +249,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
 
 /* 预览图片 */
 .preview-image {
-  max-width: 100%;
-  max-height: 100%;
-  transition: transform 0.3s ease-out;
   object-fit: contain;
+  transition: transform 0.25s ease-out;
+  user-select: none;
 }
 </style>

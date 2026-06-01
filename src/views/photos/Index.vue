@@ -78,12 +78,26 @@ const remotePhotos = [
 let photos = [...localPhotos, ...remotePhotos].map((src) => ({ src }))
 
 const gentleCurveFactor = 2.8 // 圆柱弧度，略平一些便于铺满视野
-const worldHeight = 10
+const worldHeight = 12 // 增大高度，给随机偏移留空间
 const cylinderRotationSpeed = 0.11
-const wallFillFactor = 1.94 // 照片间距留白比例（越大越满）
+const wallFillFactor = 1.6 // 略微降低，避免图片过挤
+const photoScaleRange = { min: 0.6, max: 1.5 }  // 调整大小范围，让随机效果更自然
+const compactRowGapFactor = 0.6 // 降低行紧凑度，让上下更松散
 const baseFrameColor = new THREE.Color(0xf8fafc)
 const hoverFrameColor = new THREE.Color(0x9fd7ff)
 const hoverOffset = new THREE.Vector3()
+
+// 新增：随机偏移参数
+const randomOffsetConfig = {
+  // Y轴上下随机偏移范围（单位：世界坐标）
+  yRange: 0.8,
+  // 角度随机偏移范围（弧度，影响左右分布）
+  angleRange: 0.25,
+  // Z轴（深度）随机偏移范围，模拟前后堆叠
+  depthRange: 0.35,
+  // 图片旋转角度随机范围（弧度，让图片歪一点）
+  rotationRange: Math.PI / 18 // 10度以内
+}
 
 let renderer
 let scene
@@ -219,7 +233,8 @@ async function loadPhotos() {
 }
 
 function computePhotoLayout(containerHeight) {
-  const numRows = clamp(Math.round(containerHeight / 150), 3, 6)
+  // 略微减少行数，让图片分布更松散
+  const numRows = clamp(Math.round(containerHeight / 180), 2, 5)
   const photosPerRow = Math.ceil(photos.length / numRows)
   return { numRows, photosPerRow }
 }
@@ -230,17 +245,26 @@ function addPhotos(radius, height, layout) {
   const maxAnisotropy = renderer.capabilities.getMaxAnisotropy()
   const { numRows, photosPerRow } = layout
   const angleStep = (Math.PI * 2) / photosPerRow
-  const rowPitch = (height * 0.8) / numRows
+  const baseRowPitch = (height * 0.8) / numRows
+  const usedRows = Math.min(numRows, Math.ceil(photos.length / photosPerRow))
+  const rowPitch = baseRowPitch * (usedRows <= 2 ? compactRowGapFactor : 1)
   const maxWidth = angleStep * radius * wallFillFactor
-  const maxHeight = rowPitch * wallFillFactor
+  const maxHeight = baseRowPitch * wallFillFactor
   const initialAngle = -0.62
   const currentBuildVersion = buildVersion
 
   photos.forEach((photo, index) => {
     const row = Math.floor(index / photosPerRow)
     const col = index % photosPerRow
-    const angle = initialAngle + col * angleStep
-    const y = (row - (numRows - 1) / 2) * rowPitch
+
+    // 核心改动1：为位置加入随机偏移
+    const baseAngle = initialAngle + col * angleStep
+    const angleOffset = (Math.random() - 0.5) * 2 * randomOffsetConfig.angleRange
+    const angle = baseAngle + angleOffset
+
+    const baseY = (row - (usedRows - 1) / 2) * rowPitch
+    const yOffset = (Math.random() - 0.5) * 2 * randomOffsetConfig.yRange
+    const y = baseY + yOffset
 
     const texture = loader.load(
       photo.src,
@@ -289,10 +313,15 @@ function addPhotos(radius, height, layout) {
 }
 
 function addPhotoCard({ texture, src, aspect, radius, height, maxWidth, maxHeight, angle, y, index }) {
-  const { width, photoHeight } = fitPhotoSize(maxWidth, maxHeight, aspect)
-  const depthStep = Math.max(height * 0.0008, radius * 0.00004)
-  const depthOffset = index * depthStep
-  const frameRadius = radius - height * 0.002 - depthOffset
+  const sizeScale = getPhotoSizeScale(src, index)
+  const { width, photoHeight } = fitPhotoSize(maxWidth * sizeScale, maxHeight * sizeScale, aspect)
+  
+  // 核心改动2：深度随机偏移，让图片前后错开
+  const baseDepthOffset = index * Math.max(height * 0.0008, radius * 0.00004)
+  const randomDepthOffset = Math.random() * randomOffsetConfig.depthRange
+  const totalDepthOffset = baseDepthOffset + randomDepthOffset
+
+  const frameRadius = radius - height * 0.002 - totalDepthOffset
   const photoRadius = frameRadius - height * 0.016
 
   const frameMaterial = new THREE.MeshBasicMaterial({
@@ -330,6 +359,11 @@ function addPhotoCard({ texture, src, aspect, radius, height, maxWidth, maxHeigh
     height: photoHeight,
     material: photoMaterial,
   })
+
+  // 核心改动3：图片随机旋转一点角度，打破水平对齐
+  const rotationOffset = (Math.random() - 0.5) * 2 * randomOffsetConfig.rotationRange
+  frame.rotation.z = rotationOffset
+  mesh.rotation.z = rotationOffset
 
   frame.renderOrder = index
   mesh.renderOrder = index + 0.5
@@ -384,6 +418,18 @@ function fitPhotoSize(maxWidth, maxHeight, aspect) {
   }
 
   return { width, photoHeight }
+}
+
+function getPhotoSizeScale(src, index) {
+  const seed = `${src}-${index}`
+  let hash = 0
+
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  }
+
+  const randomRatio = hash / 0xffffffff
+  return THREE.MathUtils.lerp(photoScaleRange.min, photoScaleRange.max, randomRatio)
 }
 
 function createCurvedMesh({ radius, angle, y, width, height, material }) {
