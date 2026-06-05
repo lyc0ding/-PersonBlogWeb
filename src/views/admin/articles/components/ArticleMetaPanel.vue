@@ -28,7 +28,7 @@
         <el-form-item label="封面图">
           <ImageUploader
             v-model="form.coverUrl"
-            biz-type="cover"
+            biz-type="photo"
             :max-size-m-b="5"
             hint="建议 16:9；后端接口未就绪时会使用本地预览"
           />

@@ -1,13 +1,19 @@
 <template>
   <div class="page-banner">
-    <div class="page-banner-inner">
-      <h1 class="page-title">文章</h1>
-      <p class="page-sub">记录技术、生活与折腾笔记</p>
-    </div>
+    <PageBanner
+      variant="articles"
+      eyebrow="ARTICLES"
+      title="文章"
+      subtitle="记录技术实践、问题复盘和长期折腾的笔记，让每次踩坑都变成可回看的经验。"
+      :chips="['技术笔记', '项目复盘', '长期整理']"
+      visual-label="article.archive"
+      visual-value="认真沉淀"
+    />
   </div>
 </template>
 
 <script setup>
+import PageBanner from '@/components/layout/PageBanner.vue'
 </script>
 
 <style scoped>
@@ -15,24 +21,5 @@
   width: var(--blog-content-width);
   margin: 0 auto;
   padding: 20px 16px 0;
-}
-
-.page-banner-inner {
-  text-align: center;
-  padding: 20px 16px;
-  border-bottom: 1px solid var(--blog-divider);
-}
-
-.page-title {
-  margin: 0 0 8px;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--app-text-primary);
-}
-
-.page-sub {
-  margin: 0;
-  font-size: 14px;
-  color: var(--app-text-muted);
 }
 </style>

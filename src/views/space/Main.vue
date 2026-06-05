@@ -32,12 +32,26 @@
           v-else
           :key="item.id"
           class="moment-card"
+          :class="{ 'is-current': String(item.id) === String(currentMomentId) }"
+          :data-current-id="item.id"
+          :ref="(el) => setMomentCardRef(item.id, el)"
+          role="link"
+          tabindex="0"
+          @click="openMoment(item.id)"
+          @keydown.enter="openMoment(item.id)"
         >
           <div class="moment-panel">
             <header class="moment-head">
               <div>
                 <p class="moment-kind">动态</p>
-                <h2 class="moment-title">{{ item.title || '无标题动态' }}</h2>
+                <h2 class="moment-title">
+                  <RouterLink
+                    :to="{ name: 'MomentDetail', params: { id: item.id } }"
+                    @click.stop="rememberMomentScroll"
+                  >
+                    {{ item.title || '无标题动态' }}
+                  </RouterLink>
+                </h2>
               </div>
               <time class="moment-date" :datetime="item.createTime">{{ formatDate(item.createTime) }}</time>
             </header>
@@ -53,7 +67,7 @@
                 :key="`${item.id}_${src}`"
                 type="button"
                 class="gallery-item"
-                @click="openImagePreview(src)"
+                @click.stop="openImagePreview(src)"
               >
                 <img :src="src" :alt="`${item.title || '动态'} 图片 ${index + 1}`" loading="lazy">
               </button>
@@ -68,6 +82,12 @@
               </div>
               <div class="moment-stats">
                 <span><i class="iconfont icon-hot" /> {{ item.status === 1 ? '展示中' : '隐藏' }}</span>
+                <RouterLink
+                  :to="{ name: 'MomentDetail', params: { id: item.id } }"
+                  @click.stop="rememberMomentScroll"
+                >
+                  查看详情
+                </RouterLink>
               </div>
             </footer>
           </div>
@@ -86,27 +106,46 @@
       </main>
 
       <aside class="space-side">
-        <PersonBox />
+        <PersonBox
+          :current-location="currentLocation"
+          :toc-items="momentTocItems"
+          @current-location-click="scrollToCurrentMoment"
+        />
       </aside>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onActivated, onBeforeUpdate, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import PersonBox from '@/components/sidebar/BlogProfileCard.vue'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import { timelinePageService } from '@/api/timeline'
+import {
+  hasWindowScrollRestoreMark,
+  readPageSnapshotForReturn,
+  rememberPageSnapshotForReturn,
+  restoreWindowScrollIfMarked,
+} from '@/utils/scrollMemory'
 
+const router = useRouter()
 const loading = ref(false)
 const error = ref('')
 const moments = ref([])
 const total = ref(0)
+const currentLocation = ref(null)
+const currentMomentId = ref(null)
+const momentCardRefs = new Map()
+const visibleMomentIds = new Map()
+let momentObserver = null
 
 const query = reactive({
   pageNum: 1,
   pageSize: 6,
 })
+
+const momentTocItems = computed(() => moments.value.map(buildCurrentMomentLocation).filter(Boolean))
 
 async function loadMoments() {
   loading.value = true
@@ -116,9 +155,13 @@ async function loadMoments() {
     const page = res?.data ?? res ?? {}
     moments.value = page.records ?? page.list ?? []
     total.value = page.total ?? moments.value.length
+    await nextTick()
+    syncMomentObserver()
+    updateCurrentMoment(moments.value[0])
   } catch (err) {
     moments.value = []
     total.value = 0
+    updateCurrentMoment(null)
     error.value = err?.message || '朋友圈动态加载失败，请确认后端 `/timeline/page` 可访问。'
   } finally {
     loading.value = false
@@ -130,6 +173,40 @@ const galleryClass = (count) => {
   if (count === 1) return 'gallery-one'
   if (count === 2) return 'gallery-two'
   return 'gallery-grid'
+}
+
+function openMoment(id) {
+  if (!id) return
+  rememberMomentScroll()
+  router.push({ name: 'MomentDetail', params: { id } })
+}
+
+function rememberMomentScroll() {
+  rememberPageSnapshotForReturn('space', {
+    query: { ...query },
+    moments: moments.value,
+    total: total.value,
+    currentMomentId: currentMomentId.value,
+    currentLocation: currentLocation.value,
+  })
+}
+
+async function restoreMomentSnapshot() {
+  const snapshot = readPageSnapshotForReturn('space')
+  if (!snapshot?.moments) return false
+
+  Object.assign(query, snapshot.query || {})
+  moments.value = Array.isArray(snapshot.moments) ? snapshot.moments : []
+  total.value = Number.isFinite(snapshot.total) ? snapshot.total : moments.value.length
+  currentMomentId.value = snapshot.currentMomentId ?? null
+  currentLocation.value = snapshot.currentLocation ?? buildCurrentMomentLocation(moments.value[0])
+
+  await nextTick()
+  syncMomentObserver()
+  const currentItem = moments.value.find((item) => String(item.id) === String(currentMomentId.value))
+  updateCurrentMoment(currentItem || moments.value[0])
+  restoreWindowScrollIfMarked('space')
+  return true
 }
 
 const showImagePreview = ref(false)
@@ -149,7 +226,101 @@ function formatDate(value) {
   return String(value).replace(/-/g, '.').slice(0, 16)
 }
 
-onMounted(loadMoments)
+function buildCurrentMomentLocation(item) {
+  if (!item) return null
+  const title = String(item.title || '无标题动态').trim()
+  return {
+    id: item.id,
+    title: title || '无标题动态',
+    icon: 'icon-xiaoxi',
+    type: 'moment',
+  }
+}
+
+function updateCurrentMoment(item) {
+  const location = buildCurrentMomentLocation(item)
+  currentMomentId.value = location?.id ?? null
+  currentLocation.value = location
+}
+
+function setMomentCardRef(id, el) {
+  if (el && id != null) {
+    momentCardRefs.set(String(id), el)
+  }
+}
+
+function syncMomentObserver() {
+  momentObserver?.disconnect()
+  visibleMomentIds.clear()
+
+  if (!momentCardRefs.size) return
+
+  if (typeof IntersectionObserver === 'undefined') {
+    updateCurrentMoment(moments.value[0])
+    return
+  }
+
+  momentObserver = new IntersectionObserver(handleMomentIntersections, {
+    root: null,
+    rootMargin: '-130px 0px -45% 0px',
+    threshold: [0, 0.12, 0.35, 0.65],
+  })
+
+  momentCardRefs.forEach((el) => momentObserver.observe(el))
+}
+
+function handleMomentIntersections(entries) {
+  entries.forEach((entry) => {
+    const id = String(entry.target.dataset.currentId || '')
+    if (!id) return
+
+    if (entry.isIntersecting) {
+      visibleMomentIds.set(id, entry.intersectionRatio)
+    } else {
+      visibleMomentIds.delete(id)
+    }
+  })
+
+  const currentId = Array.from(visibleMomentIds.entries())
+    .sort((a, b) => b[1] - a[1])[0]?.[0]
+
+  if (!currentId || currentId === String(currentMomentId.value)) return
+
+  const currentItem = moments.value.find((item) => String(item.id) === currentId)
+  updateCurrentMoment(currentItem)
+}
+
+function scrollToCurrentMoment(location = null) {
+  const id = typeof location === 'object' ? location?.id : (location ?? currentMomentId.value)
+  const target = id != null ? momentCardRefs.get(String(id)) : null
+  if (id != null) {
+    const currentItem = moments.value.find((item) => String(item.id) === String(id))
+    updateCurrentMoment(currentItem)
+  }
+  target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+onBeforeUpdate(() => {
+  momentCardRefs.clear()
+})
+
+onMounted(() => {
+  if (hasWindowScrollRestoreMark('space')) {
+    restoreMomentSnapshot().then((restored) => {
+      if (!restored) loadMoments()
+    })
+  } else {
+    loadMoments()
+  }
+})
+
+onActivated(() => {
+  restoreWindowScrollIfMarked('space')
+})
+
+onUnmounted(() => {
+  momentObserver?.disconnect()
+})
 </script>
 
 <style scoped>
@@ -161,7 +332,7 @@ onMounted(loadMoments)
 
 .space-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 250px;
+  grid-template-columns: minmax(0, 1fr) var(--blog-sidebar-width);
   gap: 34px;
   align-items: start;
 }
@@ -213,10 +384,18 @@ onMounted(loadMoments)
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.moment-card:hover .moment-panel {
+.moment-card:hover .moment-panel,
+.moment-card:focus-visible .moment-panel,
+.moment-card.is-current .moment-panel {
   border-color: rgba(43, 108, 176, 0.28);
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
   transform: translateY(-1px);
+}
+
+.moment-card:focus-visible {
+  outline: 2px solid var(--blog-link);
+  outline-offset: 3px;
+  border-radius: 8px;
 }
 
 .moment-head {
@@ -236,7 +415,6 @@ onMounted(loadMoments)
 
 .moment-title {
   margin: 0;
-  color: var(--app-text-primary);
   font-size: 1.12rem;
   line-height: 1.4;
   font-weight: 650;
@@ -244,6 +422,15 @@ onMounted(loadMoments)
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.moment-title a {
+  color: var(--app-text-primary);
+  text-decoration: none;
+}
+
+.moment-title a:hover {
+  color: var(--blog-link);
 }
 
 .moment-date {
@@ -361,8 +548,15 @@ onMounted(loadMoments)
   color: var(--blog-link);
 }
 
+.moment-stats a {
+  color: var(--blog-link);
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .space-side {
-  width: 250px;
+  width: var(--blog-sidebar-width);
 }
 
 .pager-wrap {

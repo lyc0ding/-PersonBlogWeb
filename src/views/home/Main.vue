@@ -17,9 +17,9 @@
         <div class="post-list">
           <RouterLink
             v-for="post in recentPosts"
-            :key="post.title"
+            :key="post.id || post.title"
             class="post-entry"
-            to="/articles"
+            :to="{ path: '/articles', query: post.title ? { q: post.title } : {} }"
           >
             <span class="post-date">{{ post.date }}</span>
             <div class="post-body">
@@ -34,13 +34,13 @@
       <aside class="home-column home-column--side" aria-label="个人博客信息">
         <div class="profile-block">
           <div class="profile-avatar">
-            <img src="/logo.png" alt="Lycoding">
+            <img :src="avatarUrl" :alt="ownerName">
           </div>
           <div>
             <p class="profile-label">BLOG OWNER</p>
-            <h2>Lycoding</h2>
+            <h2>{{ ownerName }}</h2>
             <p class="profile-text">
-              这里整理开发笔记、嵌入式实践和生活里的片段，保留一点长期主义的痕迹。
+              {{ profileBio }}
             </p>
           </div>
         </div>
@@ -57,60 +57,132 @@
       </aside>
     </section>
 
-    <section class="quick-section" aria-label="站点入口">
-      <RouterLink
-        v-for="link in quickLinks"
-        :key="link.title"
-        class="quick-link"
-        :to="link.path"
-      >
-        <span>{{ link.title }}</span>
-        <p>{{ link.desc }}</p>
-      </RouterLink>
-    </section>
+    <TimeLine :items="buildTimeline" />
   </div>
 </template>
 
 <script setup>
-const stats = [
-  { label: '文章记录', value: '23+' },
-  { label: '评论交流', value: '45+' },
-  { label: '建站年份', value: '2026' },
-]
+import { computed, onMounted, ref } from 'vue'
+import TimeLine from '@/views/home/TimeLine.vue'
+import { publicArticlePageService } from '@/api/article'
+import { publicDashboardStatsService } from '@/api/site'
+import { DEFAULT_BUILD_TIMELINE, useSiteConfigStore } from '@/stores/siteConfigStore'
 
-const recentPosts = [
-  {
-    title: 'Codex 自制宠物',
-    excerpt: '把一个有趣的小工具接入博客，让页面多一点个人化的交互感。',
-    date: '2026-05-08',
-    category: '建站',
-  },
-  {
-    title: 'U-Boot、内核移植与根文件系统构建',
-    excerpt: '记录 BeagleBone Green Gateway 与 AM335X 的移植流程和关键问题。',
-    date: '2026-04-25',
-    category: '嵌入式',
-  },
-  {
-    title: '你们搞大模型的就是？',
-    excerpt: '关于近期大模型发展、开发体验和日常使用的一些观察。',
-    date: '2026-04-11',
-    category: '生活',
-  },
-]
+const siteConfigStore = useSiteConfigStore()
+const dashboardStats = ref(null)
+const recentPosts = ref(defaultRecentPosts())
 
-const nowItems = [
-  '整理 Vue 博客前台的阅读体验',
-  '补齐嵌入式开发过程中的问题记录',
-  '把日常想法沉淀成可以回看的文字',
-]
+const ownerName = computed(() => siteConfigStore.value('site.owner', 'Lycoding'))
+const avatarUrl = computed(() => siteConfigStore.value('site.avatarUrl', '/logo.png'))
+const profileBio = computed(() => siteConfigStore.value('site.profileBio', '这里整理开发笔记、嵌入式实践和生活里的片段，保留一点长期主义的痕迹。'))
 
-const quickLinks = [
-  { title: '文章', desc: '技术笔记与经验整理', path: '/articles' },
-  { title: '朋友圈', desc: '图片、文字和近期动态', path: '/space' },
-  { title: '留言板', desc: '留下想法或交流问题', path: '/comments' },
-  { title: '关于', desc: '了解这个博客和博主', path: '/about' },
-]
+const stats = computed(() => [
+  { label: '文章记录', value: formatCount(dashboardStats.value?.publishedCount ?? dashboardStats.value?.articleCount, '23+') },
+  { label: '评论交流', value: formatCount(dashboardStats.value?.commentCount, '45+') },
+  { label: '建站年份', value: siteConfigStore.value('site.buildYear', '2026') },
+])
+
+const nowItems = computed(() => {
+  const items = siteConfigStore.json('home.nowItems', defaultNowItems())
+  return Array.isArray(items) && items.length ? items.map(String) : defaultNowItems()
+})
+
+const buildTimeline = computed(() => normalizeBuildTimeline(
+  siteConfigStore.json('home.buildTimeline', DEFAULT_BUILD_TIMELINE)
+))
+
+function defaultRecentPosts() {
+  return [
+    {
+      title: 'Codex 自制宠物',
+      excerpt: '把一个有趣的小工具接入博客，让页面多一点个人化的交互感。',
+      date: '2026.05.08',
+      category: '建站',
+    },
+    {
+      title: 'U-Boot、内核移植与根文件系统构建',
+      excerpt: '记录 BeagleBone Green Gateway 与 AM335X 的移植流程和关键问题。',
+      date: '2026.04.25',
+      category: '嵌入式',
+    },
+    {
+      title: '你们搞大模型的就是？',
+      excerpt: '关于近期大模型发展、开发体验和日常使用的一些观察。',
+      date: '2026.04.11',
+      category: '生活',
+    },
+  ]
+}
+
+function defaultNowItems() {
+  return [
+    '整理 Vue 博客前台的阅读体验',
+    '补齐嵌入式开发过程中的问题记录',
+    '把日常想法沉淀成可以回看的文字',
+  ]
+}
+
+function normalizeBuildTimeline(value) {
+  const list = Array.isArray(value) ? value : DEFAULT_BUILD_TIMELINE
+  const normalized = list
+    .filter((item) => item?.visible !== false && item?.title && (item?.time || item?.date))
+    .map((item) => ({
+      time: String(item.time || item.date),
+      title: String(item.title),
+      content: String(item.content || item.desc || ''),
+      badge: item.badge ? String(item.badge) : '',
+      visible: item.visible !== false,
+    }))
+  return normalized.length ? normalized : DEFAULT_BUILD_TIMELINE
+}
+
+function formatCount(value, fallback) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return fallback
+  return number >= 1000 ? `${Math.floor(number / 100) / 10}k` : `${number}`
+}
+
+function formatDate(value) {
+  if (!value) return '-'
+  return String(value).replace(/-/g, '.').slice(0, 10)
+}
+
+function resolveCategory(post) {
+  return post.categoryName || post.tags?.[0]?.name || post.type || '文章'
+}
+
+async function loadDashboardStats() {
+  try {
+    const res = await publicDashboardStatsService()
+    dashboardStats.value = res?.data ?? res ?? null
+  } catch {
+    dashboardStats.value = null
+  }
+}
+
+async function loadRecentPosts() {
+  try {
+    const res = await publicArticlePageService({ pageNum: 1, pageSize: 3, type: 'article' })
+    const page = res?.data ?? res ?? {}
+    const list = page.records ?? page.list ?? []
+    if (!Array.isArray(list) || !list.length) return
+    recentPosts.value = list.map((item) => ({
+      id: item.id,
+      title: item.title || '无标题文章',
+      excerpt: item.summary || item.contentText || '暂无摘要',
+      date: formatDate(item.publishTime || item.createTime),
+      category: resolveCategory(item),
+    }))
+  } catch {
+    recentPosts.value = defaultRecentPosts()
+  }
+}
+
+onMounted(() => {
+  siteConfigStore.loadConfigs()
+  loadDashboardStats()
+  loadRecentPosts()
+})
 </script>
 
 <style scoped>
@@ -349,52 +421,9 @@ const quickLinks = [
   background: var(--blog-link);
 }
 
-.quick-section {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  margin-top: 34px;
-  border: 1px solid var(--blog-divider);
-  background: var(--blog-divider);
-}
-
-.quick-link {
-  min-height: 126px;
-  padding: 22px;
-  background: var(--app-surface);
-  color: inherit;
-  text-decoration: none;
-  transition:
-    background-color 0.22s ease,
-    color 0.22s ease,
-    transform 0.22s ease;
-}
-
-.quick-link:hover {
-  background: var(--app-surface-muted);
-  transform: translateY(-2px);
-}
-
-.quick-link span {
-  color: var(--app-text-primary);
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.quick-link p {
-  margin: 10px 0 0;
-  color: var(--app-text-secondary);
-  font-size: 13px;
-  line-height: 1.65;
-}
-
 @media (max-width: 820px) {
   .home-layout {
     grid-template-columns: 1fr;
-  }
-
-  .quick-section {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -452,8 +481,5 @@ const quickLinks = [
     justify-self: start;
   }
 
-  .quick-section {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

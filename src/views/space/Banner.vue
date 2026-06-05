@@ -1,13 +1,19 @@
 <template>
   <div class="page-banner">
-    <div class="page-banner-inner">
-      <h1 class="page-title">朋友圈</h1>
-      <p class="page-sub">已在本站留下了若干条小吐槽</p>
-    </div>
+    <PageBanner
+      variant="space"
+      eyebrow="MOMENTS"
+      title="朋友圈"
+      subtitle="把近期动态、照片和一点碎碎念放在这里，像给生活做一份轻量备忘。"
+      :chips="['日常片段', '照片记录', '近期状态']"
+      visual-label="moment.feed"
+      visual-value="随手更新"
+    />
   </div>
 </template>
 
 <script setup>
+import PageBanner from '@/components/layout/PageBanner.vue'
 </script>
 
 <style scoped>
@@ -15,32 +21,5 @@
   width: 100%;
   margin: 0 auto;
   padding: 20px 16px 0;
-}
-
-.page-banner-inner {
-  text-align: center;
-  padding: 20px 16px;
-  border-bottom: 1px solid var(--blog-divider);
-}
-
-.page-title {
-  margin: 0 0 8px;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--app-text-primary);
-}
-
-.page-sub {
-  margin: 0;
-  font-size: 14px;
-  color: var(--app-text-muted);
-}
-
-.page-sub::before {
-  content: '「';
-}
-
-.page-sub::after {
-  content: '」';
 }
 </style>

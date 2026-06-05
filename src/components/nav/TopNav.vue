@@ -2,8 +2,8 @@
   <div id="nav-container">
     <div class="nav-inner">
       <div class="nav-brand">
-        <router-link to="/" class="site-name" @click="blurTarget">Lycoding</router-link>
-        <p class="site-tagline">Move It . Live For Youself .</p>
+        <router-link to="/" class="site-name" @click="blurTarget">{{ brandName }}</router-link>
+        <p class="site-tagline">{{ siteTagline }}</p>
       </div>
 
       <div class="nav-toolbar">
@@ -52,12 +52,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useSiteConfigStore } from '@/stores/siteConfigStore'
 
 const router = useRouter()
+const siteConfigStore = useSiteConfigStore()
 
-const navItems = [
+const fallbackNavItems = [
   { label: '首页', path: '/' },
   { label: '朋友圈', path: '/space' },
   { label: '文章', path: '/articles' },
@@ -65,6 +67,20 @@ const navItems = [
   { label: '照片', path: '/photos' },
   { label: '关于', path: '/about' },
 ]
+
+const brandName = computed(() => siteConfigStore.value('site.owner', 'Lycoding'))
+const siteTagline = computed(() => siteConfigStore.value('site.tagline', 'Move It . Live For Youself .'))
+const navItems = computed(() => {
+  const items = siteConfigStore.json('site.navItems', fallbackNavItems)
+  if (!Array.isArray(items)) return fallbackNavItems
+  const normalized = items
+    .filter((item) => item?.visible !== false && item?.label && item?.path)
+    .map((item) => ({
+      label: String(item.label),
+      path: String(item.path),
+    }))
+  return normalized.length ? normalized : fallbackNavItems
+})
 
 const keyword = ref('')
 const isDropdownVisible = ref(false)
@@ -95,6 +111,10 @@ const navTo = () => {
   isDropdownVisible.value = false
   router.push('/admin')
 }
+
+onMounted(() => {
+  siteConfigStore.loadConfigs()
+})
 </script>
 
 <style scoped>

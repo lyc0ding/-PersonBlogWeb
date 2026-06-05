@@ -40,15 +40,20 @@
             <label class="field-item field-item--avatar">
               <span><el-icon><Picture /></el-icon>头像</span>
               <div class="avatar-field">
-                <CommentAvatar :src="composerAvatarSrc" :name="form.nickname" size="sm" />
+                <CommentAvatar
+                  :src="composerAvatarSrc"
+                  :name="form.nickname"
+                  size="sm"
+                  :clickable="Boolean(composerAvatarSrc)"
+                  @click="previewAvatarSource(composerAvatarSrc)"
+                />
                 <div class="avatar-picker">
                   <div class="avatar-picker__controls">
                     <input
-                      v-model="form.avatar"
+                      :value="avatarFieldText"
                       type="text"
-                      maxlength="255"
                       readonly
-                      placeholder="请选择本地头像图片，可留空"
+                      :placeholder="avatarFieldPlaceholder"
                     >
                     <input
                       ref="avatarInput"
@@ -108,7 +113,8 @@
                 :src="resolveAvatar(message)"
                 :name="message.nickname"
                 size="md"
-                @click="previewAvatar()"
+                :clickable="canPreviewAvatar(message)"
+                @click="previewAvatar(message)"
               />
 
               <div class="message-content">
@@ -164,6 +170,8 @@
                       :src="resolveAvatar(reply)"
                       :name="reply.nickname"
                       size="sm"
+                      :clickable="canPreviewAvatar(reply)"
+                      @click="previewAvatar(reply)"
                     />
                     <div class="reply-content">
                       <div class="reply-meta">
@@ -242,6 +250,12 @@
         </section>
       </aside>
     </div>
+
+    <ImagePreviewer
+      :show-preview="showBigAvatar"
+      :current-image="previewAvatarImage"
+      @close="closeAvatarPreview"
+    />
   </div>
 </template>
 
@@ -250,7 +264,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import { ElMessage } from 'element-plus'
 import {
   ChatDotRound,
-  Close,
   Link,
   Location,
   Message,
@@ -287,6 +300,7 @@ const avatarInput = ref(null)
 const selectedAvatarFile = ref(null)
 const avatarPreviewUrl = ref('')
 const showBigAvatar = ref(false)
+const previewAvatarImage = ref('')
 
 // 内嵌回复状态
 const inlineReplyRoot = ref(null)
@@ -318,6 +332,14 @@ const form = reactive({
 })
 
 const composerAvatarSrc = computed(() => avatarPreviewUrl.value || form.avatar)
+const avatarFieldText = computed(() => {
+  if (selectedAvatarFile.value) return '已选择新头像，发布后生效'
+  if (form.avatar) return '已使用上传头像'
+  return ''
+})
+const avatarFieldPlaceholder = computed(() => {
+  return form.avatar ? '已使用上传头像' : '请选择本地头像图片，可留空'
+})
 
 const localReplyCount = computed(() => {
   return messageContents.value.reduce((count, item) => count + (item.replyList?.length || 0), 0)
@@ -443,6 +465,7 @@ async function submitComment() {
       form.avatar = avatar
       selectedAvatarFile.value = null
       revokeAvatarPreview()
+      avatarPreviewUrl.value = avatar
       if (avatarInput.value) {
         avatarInput.value.value = ''
       }
@@ -528,7 +551,6 @@ function handleAvatarChange(event) {
   }
 
   selectedAvatarFile.value = file
-  form.avatar = buildAvatarDisplayPath(file)
   revokeAvatarPreview()
   avatarPreviewUrl.value = URL.createObjectURL(file)
 }
@@ -540,11 +562,6 @@ function clearAvatar() {
   if (avatarInput.value) {
     avatarInput.value.value = ''
   }
-}
-
-function buildAvatarDisplayPath(file) {
-  const path = file.webkitRelativePath || file.name
-  return path.startsWith('.') || path.startsWith('/') ? path : `./${path}`
 }
 
 function normalizeUploadPath(value = '') {
@@ -566,6 +583,26 @@ function revokeAvatarPreview() {
 
 function resolveAvatar(item) {
   return resolveCommentAvatar(item)
+}
+
+function canPreviewAvatar(item) {
+  return Boolean(resolveAvatar(item))
+}
+
+function previewAvatar(item) {
+  previewAvatarSource(resolveAvatar(item))
+}
+
+function previewAvatarSource(src) {
+  const image = String(src || '').trim()
+  if (!image) return
+  previewAvatarImage.value = image
+  showBigAvatar.value = true
+}
+
+function closeAvatarPreview() {
+  showBigAvatar.value = false
+  previewAvatarImage.value = ''
 }
 
 function displayLocation(item) {
@@ -618,7 +655,7 @@ onBeforeUnmount(revokeAvatarPreview)
 
 .guestbook-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) var(--blog-sidebar-width);
   gap: 32px;
   padding-top: 30px;
 }

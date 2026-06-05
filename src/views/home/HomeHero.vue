@@ -1,15 +1,15 @@
 <template>
-  <section class="home-hero" aria-label="Lycoding personal blog">
+  <section class="home-hero" :style="heroStyle" aria-label="personal blog hero">
     <div class="hero-content">
-      <p class="hero-eyebrow">PERSONAL BLOG</p>
-      <h1>Lycoding</h1>
+      <p class="hero-eyebrow">{{ heroEyebrow }}</p>
+      <h1>{{ heroTitle }}</h1>
       <p class="hero-subtitle">
-        记录代码、生活和持续折腾的个人博客。把问题写清楚，把经验留下来。
+        {{ heroSubtitle }}
       </p>
 
       <div class="hero-actions" aria-label="首页快捷入口">
-        <RouterLink class="hero-link hero-link--primary" to="/articles">阅读文章</RouterLink>
-        <RouterLink class="hero-link" to="/space">看看朋友圈</RouterLink>
+        <RouterLink class="hero-link hero-link--primary" :to="primaryPath">{{ primaryText }}</RouterLink>
+        <RouterLink class="hero-link" :to="secondaryPath">{{ secondaryText }}</RouterLink>
       </div>
 
       <ul class="hero-tags" aria-label="博客方向">
@@ -20,7 +20,34 @@
 </template>
 
 <script setup>
-const heroTags = ['Java / Vue', '嵌入式', '生活记录']
+import { computed, onMounted } from 'vue'
+import { useSiteConfigStore } from '@/stores/siteConfigStore'
+
+const siteConfigStore = useSiteConfigStore()
+const fallbackTags = ['Java / Vue', '嵌入式', '生活记录']
+
+const heroEyebrow = computed(() => siteConfigStore.value('home.heroEyebrow', 'PERSONAL BLOG'))
+const heroTitle = computed(() => siteConfigStore.value('home.heroTitle', 'Lycoding'))
+const heroSubtitle = computed(() => siteConfigStore.value('home.heroSubtitle', '记录代码、生活和持续折腾的个人博客。把问题写清楚，把经验留下来。'))
+const primaryText = computed(() => siteConfigStore.value('home.heroPrimaryText', '阅读文章'))
+const primaryPath = computed(() => siteConfigStore.value('home.heroPrimaryPath', '/articles'))
+const secondaryText = computed(() => siteConfigStore.value('home.heroSecondaryText', '看看朋友圈'))
+const secondaryPath = computed(() => siteConfigStore.value('home.heroSecondaryPath', '/space'))
+const heroTags = computed(() => {
+  const tags = siteConfigStore.json('home.heroTags', fallbackTags)
+  return Array.isArray(tags) && tags.length ? tags.map(String) : fallbackTags
+})
+const heroStyle = computed(() => ({
+  '--hero-cover-url': `url('${cssUrl(siteConfigStore.value('home.heroCoverUrl', '/img/bac2.jpg'))}')`,
+}))
+
+function cssUrl(value) {
+  return String(value || '').replace(/'/g, "\\'")
+}
+
+onMounted(() => {
+  siteConfigStore.loadConfigs()
+})
 </script>
 
 <style scoped>
@@ -33,7 +60,7 @@ const heroTags = ['Java / Vue', '嵌入式', '生活记录']
   border-radius: 8px;
   background:
     linear-gradient(90deg, rgba(8, 18, 32, 0.78), rgba(8, 18, 32, 0.32) 58%, rgba(8, 18, 32, 0.18)),
-    url('/img/bac2.jpg') center / cover no-repeat;
+    var(--hero-cover-url, url('/img/bac2.jpg')) center / cover no-repeat;
   box-shadow: 0 18px 46px rgba(15, 23, 42, 0.12);
 }
 
@@ -150,7 +177,7 @@ const heroTags = ['Java / Vue', '嵌入式', '生活记录']
     margin-bottom: 12px;
     background:
       linear-gradient(180deg, rgba(8, 18, 32, 0.82), rgba(8, 18, 32, 0.42)),
-      url('/img/bac2.jpg') center / cover no-repeat;
+      var(--hero-cover-url, url('/img/bac2.jpg')) center / cover no-repeat;
   }
 
   .hero-content {

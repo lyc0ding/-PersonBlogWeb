@@ -1,173 +1,160 @@
 <template>
-  <div class="time-line">
-    <el-timeline>
-      <el-timeline-item 
-        v-for="(item, index) in lineList" 
-        :key="index" 
-        :timestamp="item.timestamp" 
-        placement="top"
-        :ref="el => itemRefs[index] = el"
+  <section class="build-timeline" aria-label="建站时间线">
+    <div class="section-heading">
+      <p>SITE TIMELINE</p>
+      <h2>建站时间线</h2>
+    </div>
+
+    <div class="timeline-list">
+      <article
+        v-for="(item, index) in items"
+        :key="`${item.time}_${item.title}_${index}`"
+        class="timeline-item"
       >
-        <el-card 
-          :class="{
-            'card-animation': true,
-            'card-enter': cardStates[index].visible,
-            'card-exit': !cardStates[index].visible
-          }"
-        >
-          <h4>{{ item.title }}</h4>
+        <div class="timeline-marker" aria-hidden="true"></div>
+        <time>{{ item.time }}</time>
+        <div class="timeline-content">
+          <span v-if="item.badge" class="timeline-badge">{{ item.badge }}</span>
+          <h3>{{ item.title }}</h3>
           <p>{{ item.content }}</p>
-        </el-card>
-      </el-timeline-item>
-    </el-timeline>
-  </div>
+        </div>
+      </article>
+    </div>
+  </section>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-
-const lineList = ref([
-  {
-    timestamp: '2018/4/3',
-    title: 'Update Github template',
-    content: 'Tom committed 2018/4/12 20:46'
-  }, {
-    timestamp: '2019/6/15',
-    title: 'Refactor component',
-    content: 'Lisa optimized performance'
-  }, {
-    timestamp: '2020/2/28',
-    title: 'Fix security issues',
-    content: 'David patched vulnerabilities'
-  }
-])
-
-// 存储每个卡片的DOM引用
-const itemRefs = ref([])
-
-// 卡片状态管理
-const cardStates = ref(lineList.value.map(() => ({
-  visible: false,
-  hasBeenVisible: false
-})))
-
-// 滚动方向跟踪
-const lastScrollTop = ref(0)
-const scrollDirection = ref('down')
-
-// 节流函数优化性能
-const throttle = (func, limit) => {
-  let lastFunc, lastRan
-  return function() {
-    const context = this
-    const args = arguments
-    if (!lastRan) {
-      func.apply(context, args)
-      lastRan = Date.now()
-    } else {
-      clearTimeout(lastFunc)
-      lastFunc = setTimeout(() => {
-        if ((Date.now() - lastRan) >= limit) {
-          func.apply(context, args)
-          lastRan = Date.now()
-        }
-      }, limit - (Date.now() - lastRan))
-    }
-  }
-}
-
-// 检查元素是否在视口中
-const isInViewport = (el) => {
-  if (!el) return false
-  const rect = el.getBoundingClientRect()
-  return (
-    rect.top <= (window.innerHeight || document.documentElement.clientHeight) &&
-    rect.bottom >= 0
-  )
-}
-
-// 处理滚动事件
-const handleScroll = () => {
-  const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop
-  scrollDirection.value = currentScrollTop > lastScrollTop.value ? 'down' : 'up'
-  lastScrollTop.value = currentScrollTop
-
-  itemRefs.value.forEach((el, index) => {
-    if (!el) return
-    
-    const isVisible = isInViewport(el.$el || el)
-    
-    // 向下滚动：卡片逐个进入
-    if (scrollDirection.value === 'down') {
-      if (isVisible) {
-        // 只有当前面的卡片已显示时才显示当前卡片
-        if (index === 0 || cardStates.value[index - 1].hasBeenVisible) {
-          cardStates.value[index].visible = true
-          cardStates.value[index].hasBeenVisible = true
-        }
-      }
-    } 
-    // 向上滚动：卡片逐个退出
-    else {
-      if (!isVisible && cardStates.value[index].hasBeenVisible) {
-        cardStates.value[index].visible = false
-      }
-    }
-  })
-}
-
-// 初始化观察器
-onMounted(() => {
-  window.addEventListener('scroll', throttle(handleScroll, 100))
-  // 初始检查可见卡片
-  handleScroll()
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', throttle(handleScroll, 100))
+defineProps({
+  items: {
+    type: Array,
+    default: () => [],
+  },
 })
 </script>
 
 <style scoped>
-.time-line {
-  width: 70%;
+.build-timeline {
+  padding-top: 34px;
 }
 
-
-.el-card {
-  height: 300px;
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
-:deep(.el-timeline-item__timestamp) {
-  color: var(--app-text-primary) !important;
-  font-size: 18px !important;
-  font-weight: bold !important;
-  text-shadow: 0 0 3px var(--app-shadow-soft);
-  margin-bottom: 10px !important;   /* 增加下边距 */
+.section-heading p {
+  margin: 0;
+  color: var(--blog-meta);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
 }
 
-/* 修改顶部时间戳的特定样式 */
-:deep(.el-timeline-item__timestamp.is-top) {
-  font-size: 20px !important;       /* 顶部时间戳更大 */
-  padding-top: 5px;                 /* 顶部留白 */
+.section-heading h2 {
+  margin: 0;
+  color: var(--app-text-primary);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
-/* 卡片基础动画设置 */
-.card-animation {
-  transition: transform 0.6s linear, opacity 0.6s linear;
-  transform: translateX(100%);
-  opacity: 0;
+.timeline-list {
+  position: relative;
+  display: grid;
+  gap: 0;
+  padding-left: 24px;
+  border-top: 1px solid var(--blog-divider);
 }
 
-/* 进入动画：从右向左滑入 */
-.card-enter {
-  transform: translateX(0);
-  opacity: 1;
+.timeline-list::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 28px;
+  bottom: 28px;
+  width: 1px;
+  background: var(--blog-divider);
 }
 
-/* 退出动画：从左向右滑出 */
-.card-exit {
-  transform: translateX(-100%);
-  opacity: 0;
+.timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 22px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--blog-divider);
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -23px;
+  top: 28px;
+  width: 13px;
+  height: 13px;
+  border: 3px solid var(--app-surface);
+  border-radius: 50%;
+  background: var(--blog-link);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--blog-link) 45%, transparent);
+}
+
+.timeline-item time {
+  color: var(--blog-meta);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.timeline-content {
+  min-width: 0;
+}
+
+.timeline-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--blog-divider);
+  border-radius: 999px;
+  color: var(--blog-link);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.timeline-content h3 {
+  margin: 0;
+  color: var(--app-text-primary);
+  font-size: 1.03rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.timeline-content p {
+  margin: 8px 0 0;
+  color: var(--app-text-secondary);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+@media (max-width: 620px) {
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .timeline-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .timeline-item time {
+    white-space: normal;
+  }
 }
 </style>

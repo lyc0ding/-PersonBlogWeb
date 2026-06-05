@@ -54,7 +54,7 @@
               <ImageUploader v-model="form.avatarUrl" biz-type="avatar" :max-size-m-b="5" hint="建议 1:1 头像" />
             </el-form-item>
             <el-form-item label="封面">
-              <ImageUploader v-model="form.coverUrl" biz-type="about" :max-size-m-b="8" hint="建议横向生活照或工作台照片" />
+              <ImageUploader v-model="form.coverUrl" biz-type="photo" :max-size-m-b="8" hint="建议横向生活照或工作台照片" />
             </el-form-item>
           </div>
 

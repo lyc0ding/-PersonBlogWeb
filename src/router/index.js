@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useTagStore } from '@/stores/tagStore'
+import { done, start } from '@/utils/nprogress'
 
 const keepQueryRedirect = (path) => (to) => ({
     path,
@@ -9,6 +10,31 @@ const keepQueryRedirect = (path) => (to) => ({
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
+    scrollBehavior(to, from, savedPosition) {
+        if (savedPosition) {
+            return savedPosition
+        }
+
+        if (to.hash) {
+            return {
+                el: to.hash,
+                behavior: 'smooth',
+            }
+        }
+
+        if (to.name === 'ArticleDetail' || to.name === 'MomentDetail') {
+            return { top: 0 }
+        }
+
+        if (
+            (from.name === 'ArticleDetail' && to.name === 'Articles') ||
+            (from.name === 'MomentDetail' && to.name === 'Space')
+        ) {
+            return false
+        }
+
+        return { top: 0 }
+    },
     routes: [
         {
             path: '/technolyge',
@@ -61,12 +87,30 @@ const router = createRouter({
                     }
                 },
                 {
+                    path: 'space/:id',
+                    name: 'MomentDetail',
+                    component: () => import('@/views/space/Detail.vue'),
+                    meta: {
+                        keepAlive: false,
+                        title: '朋友圈详情'
+                    }
+                },
+                {
                     path: 'articles',
                     name: 'Articles',
                     component: () => import('@/views/articles/Index.vue'),
                     meta: {
                         keepAlive: true, // 启用缓存
                         title: '文章'
+                    }
+                },
+                {
+                    path: 'articles/:id',
+                    name: 'ArticleDetail',
+                    component: () => import('@/views/articles/Detail.vue'),
+                    meta: {
+                        keepAlive: false,
+                        title: '文章详情'
                     }
                 },
                 {
@@ -195,6 +239,15 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: 'build-timeline',
+                    name: 'BuildTimelineManage',
+                    component: () => import('@/views/admin/BuildTimelineManage.vue'),
+                    meta: {
+                        keepAlive: true,
+                        title: '建站时间线'
+                    },
+                },
+                {
                     path: 'photos',
                     name: 'PhotoManage',
                     component: () => import('@/views/admin/PhotoManage.vue'),
@@ -242,6 +295,7 @@ router.afterEach(() => {
 
 
 router.beforeEach((to, from) => {
+    start()
     const tagStore = useTagStore()
     // 添加标签
     tagStore.addTag(to)

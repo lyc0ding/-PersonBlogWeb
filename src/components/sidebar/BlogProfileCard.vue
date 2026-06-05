@@ -2,23 +2,23 @@
   <section class="profile-card" aria-label="博主信息">
     <div class="profile-card__head">
       <button class="profile-avatar" type="button" aria-label="查看关于页面" @click="toAbout">
-        <img src="/logo.png" alt="Lycoding">
+        <img :src="avatarUrl" :alt="ownerName">
       </button>
 
       <div class="profile-copy">
         <p class="profile-eyebrow">PERSONAL BLOG</p>
-        <h2>Lycoding</h2>
-        <p class="profile-role">后端开发者 / 博客作者</p>
+        <h2>{{ ownerName }}</h2>
+        <p class="profile-role">{{ roleTitle }}</p>
       </div>
     </div>
 
     <p class="profile-bio">
-      记录 Java、Spring Boot、数据库实践，也收藏一些生活里的灵感与照片。
+      {{ profileBio }}
     </p>
 
     <div class="profile-status" aria-label="当前状态">
       <span class="status-dot" aria-hidden="true"></span>
-      <span>正在整理 Vue 博客前台体验</span>
+      <span>{{ profileStatus }}</span>
     </div>
 
     <div class="profile-stats" aria-label="博客统计">
@@ -46,31 +46,126 @@
         <i class="iconfont icon-youjiantou link-arrow" aria-hidden="true"></i>
       </RouterLink>
     </nav>
+
+    <nav v-if="normalizedTocItems.length" class="profile-toc" aria-label="本页目录">
+      <div class="profile-toc__head">
+        <span>本页目录</span>
+        <small>{{ normalizedTocItems.length }}</small>
+      </div>
+      <button
+        v-for="item in normalizedTocItems"
+        :key="`${item.type || 'toc'}-${item.id}`"
+        type="button"
+        class="profile-toc__item"
+        :class="{ 'is-active': isTocItemActive(item) }"
+        :title="item.title"
+        @click="handleTocItemClick(item)"
+      >
+        <span class="profile-toc__marker" aria-hidden="true"></span>
+        <span>{{ item.title }}</span>
+      </button>
+    </nav>
   </section>
 </template>
 
 <script setup>
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { publicDashboardStatsService } from '@/api/site'
+import { useSiteConfigStore } from '@/stores/siteConfigStore'
 
 const router = useRouter()
+const siteConfigStore = useSiteConfigStore()
+const dashboardStats = ref(null)
+const props = defineProps({
+  currentLocation: {
+    type: Object,
+    default: null,
+  },
+  tocItems: {
+    type: Array,
+    default: () => [],
+  },
+})
+const emit = defineEmits(['current-location-click'])
 
-const stats = [
-  { label: '文章', value: '23+' },
-  { label: '评论', value: '45+' },
-  { label: '建站', value: '2026' },
-]
-
-const tags = ['Java', 'Spring Boot', 'Vue', 'MySQL']
-
-const links = [
+const fallbackTags = ['Java', 'Spring Boot', 'Vue', 'MySQL']
+const fallbackLinks = [
   { label: '关于我', path: '/about', icon: 'icon-shuohuaren' },
   { label: '文章归档', path: '/articles', icon: 'icon-wenjian' },
   { label: '留言交流', path: '/comments', icon: 'icon-liuyan' },
 ]
 
+const ownerName = computed(() => siteConfigStore.value('site.owner', 'Lycoding'))
+const avatarUrl = computed(() => siteConfigStore.value('site.avatarUrl', '/logo.png'))
+const roleTitle = computed(() => siteConfigStore.value('site.roleTitle', '后端开发者 / 博客作者'))
+const profileBio = computed(() => siteConfigStore.value('site.profileBio', '记录 Java、Spring Boot、数据库实践，也收藏一些生活里的灵感与照片。'))
+const profileStatus = computed(() => siteConfigStore.value('site.profileStatus', '正在整理 Vue 博客前台体验'))
+const stats = computed(() => [
+  { label: '文章', value: formatCount(dashboardStats.value?.publishedCount ?? dashboardStats.value?.articleCount, '23+') },
+  { label: '评论', value: formatCount(dashboardStats.value?.commentCount, '45+') },
+  { label: '建站', value: siteConfigStore.value('site.buildYear', '2026') },
+])
+const tags = computed(() => {
+  const list = siteConfigStore.json('site.profileTags', fallbackTags)
+  return Array.isArray(list) && list.length ? list.map(String) : fallbackTags
+})
+const links = computed(() => {
+  const list = siteConfigStore.json('site.profileLinks', fallbackLinks)
+  if (!Array.isArray(list)) return fallbackLinks
+  const normalized = list
+    .filter((item) => item?.label && item?.path)
+    .map((item) => ({
+      label: String(item.label),
+      path: String(item.path),
+      icon: String(item.icon || 'icon-youjiantou'),
+  }))
+  return normalized.length ? normalized : fallbackLinks
+})
+const normalizedTocItems = computed(() => {
+  const source = props.tocItems.length ? props.tocItems : (props.currentLocation ? [props.currentLocation] : [])
+  return source
+    .filter((item) => item?.id != null)
+    .map((item) => ({
+      ...item,
+      title: String(item.title || '无标题').trim() || '无标题',
+    }))
+})
+
 const toAbout = () => {
   router.push('/about')
 }
+
+function isTocItemActive(item) {
+  return String(item?.id) === String(props.currentLocation?.id)
+}
+
+function handleTocItemClick(item) {
+  if (item?.path) {
+    router.push(item.path)
+  }
+  emit('current-location-click', item)
+}
+
+function formatCount(value, fallback) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return fallback
+  return number >= 1000 ? `${Math.floor(number / 100) / 10}k` : `${number}`
+}
+
+async function loadDashboardStats() {
+  try {
+    const res = await publicDashboardStatsService()
+    dashboardStats.value = res?.data ?? res ?? null
+  } catch {
+    dashboardStats.value = null
+  }
+}
+
+onMounted(() => {
+  siteConfigStore.loadConfigs()
+  loadDashboardStats()
+})
 </script>
 
 <style scoped>
@@ -241,8 +336,13 @@ const toAbout = () => {
   min-height: 38px;
   padding: 5px 8px 5px 5px;
   color: var(--app-text-secondary);
+  font: inherit;
+  text-align: left;
   text-decoration: none;
+  background: transparent;
+  border: 0;
   border-radius: 8px;
+  cursor: pointer;
   transition:
     background-color 0.2s ease,
     color 0.2s ease,
@@ -284,6 +384,91 @@ const toAbout = () => {
   font-size: 12px;
 }
 
+.profile-toc {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--blog-divider);
+}
+
+.profile-toc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  color: var(--app-text-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.profile-toc__head small {
+  color: var(--blog-meta);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-toc__item {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 8px;
+  color: var(--app-text-secondary);
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.profile-toc__item:hover {
+  color: var(--blog-link);
+  background: color-mix(in srgb, var(--blog-link) 7%, transparent);
+}
+
+.profile-toc__item.is-active {
+  color: var(--blog-link);
+  background: color-mix(in srgb, var(--blog-link) 8%, var(--app-surface));
+  border-color: color-mix(in srgb, var(--blog-link) 20%, var(--blog-card-border));
+}
+
+.profile-toc__marker {
+  width: 6px;
+  height: 6px;
+  justify-self: center;
+  border-radius: 50%;
+  background: var(--blog-card-border);
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.profile-toc__item.is-active .profile-toc__marker {
+  background: var(--blog-link);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--blog-link) 14%, transparent);
+  transform: scale(1.08);
+}
+
+.profile-toc__item span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
   .profile-card {
     padding: 18px;
@@ -295,6 +480,15 @@ const toAbout = () => {
 
   .profile-link {
     grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .profile-toc {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-toc__head {
+    grid-column: 1 / -1;
   }
 
   .link-arrow {
@@ -313,6 +507,10 @@ const toAbout = () => {
   }
 
   .profile-links {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-toc {
     grid-template-columns: 1fr;
   }
 }

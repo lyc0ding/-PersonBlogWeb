@@ -10,9 +10,19 @@
 
         <!-- 主内容区 -->
         <main>
-            <router-view v-slot="{ Component }"> <!-- 主内容动态切换 -->
-                <transition name="fade" mode="out-in"> <!-- 可选：添加过渡动画 -->
-                    <component :is="Component" />
+            <router-view v-slot="{ Component, route }"> <!-- 主内容动态切换 -->
+                <KeepAlive>
+                    <component
+                        :is="route.meta.keepAlive ? Component : KeepAlivePlaceholder"
+                        :key="route.meta.keepAlive ? route.name : 'keep-alive-placeholder'"
+                    />
+                </KeepAlive>
+                <transition name="fade" mode="out-in">
+                    <component
+                        :is="Component"
+                        v-if="!route.meta.keepAlive"
+                        :key="route.fullPath"
+                    />
                 </transition>
             </router-view>
         </main>
@@ -22,8 +32,14 @@
 </template>
 
 <script setup>
+import { defineComponent, h } from 'vue'
 import Nav from '@/components/nav/TopNav.vue'
 import FloatingTools from '@/components/layout/FloatingTools.vue'
+
+const KeepAlivePlaceholder = defineComponent({
+    name: 'KeepAlivePlaceholder',
+    render: () => h('span', { style: 'display: none;' }),
+})
 </script>
 
 <style lang="scss" scoped>

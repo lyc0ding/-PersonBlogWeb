@@ -307,7 +307,7 @@ async function handleImageFile(event) {
 
   uploading.value = true
   try {
-    const res = await uploadImageService(file, 'content')
+    const res = await uploadImageService(file, 'photo')
     const url = resolveUploadUrl(res)
     if (!url) throw new Error('empty upload url')
     insertImage(url, file.name)

@@ -97,7 +97,7 @@
         <el-form-item label="图片">
           <ImageUploader
             v-model="imageDraft"
-            biz-type="timeline"
+            biz-type="photo"
             :max-size-m-b="8"
             hint="上传后点击添加，可连续添加多张"
             @uploaded="appendUploadedImage"

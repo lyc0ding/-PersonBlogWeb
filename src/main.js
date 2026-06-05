@@ -10,7 +10,6 @@ import App from './App.vue'
 import router from './router'
 
 import { createPinia } from 'pinia'
-import Axios from 'axios'
 
 // import './assets/fonts/fonts.css';//字体文件
 import './assets/styles/variables.scss'
@@ -20,9 +19,10 @@ import './assets/styles/global.scss'
 import './assets/styles/pet-dog-sprites.scss'
 
 const app = createApp(App)
+const pinia = createPinia()
 
+app.use(pinia)
 app.use(router)
-app.use(createPinia())
 app.use(ElementPlus)
 
 

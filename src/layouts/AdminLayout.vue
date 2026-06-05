@@ -56,6 +56,11 @@
               <template #title>朋友圈管理</template>
             </el-menu-item>
 
+            <el-menu-item index="/admin/build-timeline">
+              <el-icon><Timer /></el-icon>
+              <template #title>建站时间线</template>
+            </el-menu-item>
+
             <el-menu-item index="/admin/photos">
               <el-icon><PictureFilled /></el-icon>
               <template #title>照片管理</template>
@@ -113,6 +118,7 @@ import {
   Picture,
   PictureFilled,
   Setting,
+  Timer,
   User,
 } from '@element-plus/icons-vue'
 

@@ -124,6 +124,7 @@ function goCreate() {
 }
 
 function goEdit(id) {
+console.log(`id = ${id}`)
   router.push({ name: 'AdminArticleEdit', params: { id } })
 }
 

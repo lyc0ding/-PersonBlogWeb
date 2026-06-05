@@ -1,7 +1,7 @@
 <template>
   <ImageUploader
     :model-value="modelValue"
-    biz-type="cover"
+    biz-type="photo"
     hint="封面图 JPG/PNG/GIF，最大 5MB"
     @update:model-value="emit('update:modelValue', $event)"
   />

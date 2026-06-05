@@ -64,8 +64,6 @@ const position = ref({ x: 0, y: 0 });
 const isDragging = ref(false);
 const startDragPosition = ref({ x: 0, y: 0 });
 const previewImage = ref(null);
-
-// ============= 核心修复：打开时自动缩放到适合屏幕 =============
 watch(() => props.showPreview, (val) => {
   if (val) {
     reset();
@@ -195,8 +193,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
 .preview-content {
   position: relative;
   z-index: 1001;
-  width: 95vw;
-  height: 95vh;
+  width: 75vw;
+  height: 75vh;
   display: flex;
   flex-direction: column;
   background-color: var(--app-surface);

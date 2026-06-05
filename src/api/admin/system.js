@@ -25,6 +25,24 @@ export function configListService(group) {
   })
 }
 
+/** PUT /system/config */
+export function configSaveService(data) {
+  return request({
+    url: '/system/config',
+    method: 'put',
+    data,
+  })
+}
+
+/** PUT /system/config/batch */
+export function configBatchSaveService(data) {
+  return request({
+    url: '/system/config/batch',
+    method: 'put',
+    data,
+  })
+}
+
 /** GET /system/about */
 export function aboutDetailService() {
   return request({

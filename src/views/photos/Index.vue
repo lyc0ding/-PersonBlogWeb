@@ -14,68 +14,12 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import * as THREE from 'three'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import { photoPageService } from '@/api/photo'
-import avatarUrl from '@/assets/img/avatar.png'
-import bac1Url from '@/assets/img/bac1.jpg'
-import imageUrl from '@/assets/img/image.png'
-import neymarUrl from '@/assets/img/neymar.png'
-import vscodeUrl from '@/assets/img/vscode.png'
-import whiteUrl from '@/assets/img/white.png'
 
 const sceneEl = ref(null)
 const showImagePreview = ref(false)
 const currentPreviewImage = ref('')
 
-const localPhotos = [
-  bac1Url,
-  vscodeUrl,
-  avatarUrl,
-  imageUrl,
-  neymarUrl,
-  whiteUrl,
-  '/img/bac2.jpg',
-  '/img/neymar.jpg',
-  bac1Url,
-  vscodeUrl,
-  avatarUrl,
-  imageUrl,
-  neymarUrl,
-  '/img/bac2.jpg',
-]
-
-const remotePhotos = [
-  'https://picsum.photos/id/10/900/600',
-  'https://picsum.photos/id/11/700/900',
-  'https://picsum.photos/id/12/900/720',
-  'https://picsum.photos/id/13/720/900',
-  'https://picsum.photos/id/14/960/540',
-  'https://picsum.photos/id/15/800/800',
-  'https://picsum.photos/id/16/900/640',
-  'https://picsum.photos/id/17/640/900',
-  'https://picsum.photos/id/18/900/680',
-  'https://picsum.photos/id/19/680/900',
-  'https://picsum.photos/id/20/960/640',
-  'https://picsum.photos/id/21/720/720',
-  'https://picsum.photos/id/22/900/600',
-  'https://picsum.photos/id/23/700/900',
-  'https://picsum.photos/id/24/900/700',
-  'https://picsum.photos/id/25/720/900',
-  'https://picsum.photos/id/26/960/540',
-  'https://picsum.photos/id/27/800/800',
-  'https://picsum.photos/id/28/900/640',
-  'https://picsum.photos/id/29/640/900',
-  'https://picsum.photos/id/30/900/680',
-  'https://picsum.photos/id/31/680/900',
-  'https://picsum.photos/id/32/960/640',
-  'https://picsum.photos/id/33/720/720',
-  'https://picsum.photos/id/34/900/600',
-  'https://picsum.photos/id/35/700/900',
-  'https://picsum.photos/id/36/900/720',
-  'https://picsum.photos/id/37/720/900',
-  'https://picsum.photos/id/38/960/540',
-  'https://picsum.photos/id/39/800/800',
-]
-
-let photos = [...localPhotos, ...remotePhotos].map((src) => ({ src }))
+let photos = []
 
 const gentleCurveFactor = 2.8 // 圆柱弧度，略平一些便于铺满视野
 const worldHeight = 12 // 增大高度，给随机偏移留空间

@@ -4,13 +4,17 @@
     ref="tagcloudall"
     :class="{ 'is-paused': state.isPaused }"
   >
+    <p v-if="loading" class="tagcloud-state">标签加载中...</p>
+    <p v-else-if="error" class="tagcloud-state">{{ error }}</p>
+    <p v-else-if="!tagList.length" class="tagcloud-state">暂无标签</p>
     <a
       v-for="(item, index) in tagList"
-      :key="item.name"
+      :key="item.id ?? item.name"
       :href="item.url"
-      rel="external nofollow"
       :class="{ 'is-hovered': hoveredIndex === index }"
       :style="{ '--tag-color': item.color }"
+      :title="item.name"
+      @click.prevent="openTag(item)"
       @pointerenter="handleTagEnter(index)"
       @pointerleave="handleTagLeave"
       @focus="handleTagEnter(index)"
@@ -23,11 +27,18 @@
 
 <script setup>
 import { ref, reactive, onMounted, nextTick, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { publicTagListService } from '@/api/tag';
 
 const tagList = ref([]);
 const mcList = ref([]);
 const tagcloudall = ref(null);
 const hoveredIndex = ref(-1);
+const loading = ref(false);
+const error = ref('');
+const router = useRouter();
+
+const palette = ['#2563eb', '#0f766e', '#b45309', '#be123c', '#7c3aed', '#0e7490', '#64748b'];
 
 const state = reactive({
   radius: 96,
@@ -46,6 +57,39 @@ let oList = null;
 let oA = null;
 let animationFrame = null;
 let resizeObserver = null;
+
+const normalizeTags = (list = []) => {
+  const result = [];
+
+  const walk = (nodes) => {
+    if (!Array.isArray(nodes)) return;
+
+    nodes.forEach((item) => {
+      if (!item || item.status === 0) return;
+      const name = String(item.name ?? '').trim();
+
+      if (name) {
+        result.push({
+          id: item.id,
+          name,
+          color: item.color,
+          url: `/articles?q=${encodeURIComponent(name)}`
+        });
+      }
+
+      walk(item.children);
+    });
+  };
+
+  walk(list);
+
+  return result
+    .filter((item) => item.name)
+    .map((item, index) => ({
+      ...item,
+      color: item.color || palette[index % palette.length]
+    }));
+};
 
 const sineCosine = (a, b, c) => {
   state.sa = Math.sin(a);
@@ -186,28 +230,39 @@ const handleTagLeave = () => {
   depthSort();
 };
 
-const query = () => {
-  let tagListOrg = [
-    { name: '标签1', url: '#' },{ name: '标签2', url: '#' },{ name: '标签3', url: '#' },
-    { name: '标签4', url: '#' },{ name: '标签5', url: '#' },{ name: '标签6', url: '#' },
-    { name: '标签7', url: '#' },{ name: '标签8', url: '#' },{ name: '标签9', url: '#' },
-    { name: '标签10', url: '#' },{ name: '标签11', url: '#' },{ name: '标签12', url: '#' },
-    { name: '标签13', url: '#' },{ name: '标签14', url: '#' },{ name: '标签15', url: '#' },
-    { name: '标签16', url: '#' },{ name: '标签17', url: '#' }
-  ];
+const openTag = (item) => {
+  if (!item?.name) return;
+  router.push({
+    path: '/articles',
+    query: { q: item.name }
+  });
+};
 
-  const palette = ['#2563eb','#0f766e','#b45309','#be123c','#7c3aed','#0e7490','#64748b'];
-  tagListOrg.forEach((item, index) => {
-    item.color = palette[index % palette.length]
-  })
+const query = async () => {
+  loading.value = true;
+  error.value = '';
 
-  tagList.value = tagListOrg;
-  onReady();
+  try {
+    const res = await publicTagListService();
+    const list = res?.data ?? res ?? [];
+    tagList.value = normalizeTags(list);
+  } catch (err) {
+    tagList.value = [];
+    error.value = err?.message || '标签加载失败';
+  } finally {
+    loading.value = false;
+    await onReady();
+  }
 };
 
 const onReady = async () => {
   await nextTick();
+  cancelAnimationFrame(animationFrame);
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+
   oList = tagcloudall.value;
+  if (!oList) return;
   oA = oList.getElementsByTagName('a');
   state.radius = Math.min(oList.offsetWidth, oList.offsetHeight) * 0.38;
 
@@ -215,6 +270,8 @@ const onReady = async () => {
   for (let i = 0; i < oA.length; i++) {
     mcList.value.push({ cx: 0, cy: 0, cz: 0, x: 0, y: 0, scale: 1, alpha: 1 });
   }
+
+  if (!oA.length) return;
 
   sineCosine(0, 0, 0);
   await positionAll();
@@ -278,6 +335,20 @@ onUnmounted(() => {
   opacity: 0.22;
   transform: translate(-50%, -50%);
   pointer-events: none;
+}
+
+.tagcloud-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 18px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .tagcloud-all a {

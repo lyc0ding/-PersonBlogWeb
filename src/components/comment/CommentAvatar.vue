@@ -1,8 +1,19 @@
 <template>
   <div
     class="comment-avatar"
-    :class="[`comment-avatar--${size}`, { 'comment-avatar--image': hasImage }]"
-    :title="name"
+    :class="[
+      `comment-avatar--${size}`,
+      {
+        'comment-avatar--image': hasImage,
+        'comment-avatar--clickable': isInteractive,
+      },
+    ]"
+    :title="avatarTitle"
+    :role="isInteractive ? 'button' : undefined"
+    :tabindex="isInteractive ? 0 : undefined"
+    @click="handleClick"
+    @keydown.enter="handleClick"
+    @keydown.space.prevent="handleClick"
   >
     <img v-if="hasImage" :src="src" :alt="`${name} 的头像`" @error="onImageError">
     <span v-else>{{ fallbackText }}</span>
@@ -15,6 +26,7 @@ import { computed, ref, watch } from 'vue'
 const props = defineProps({
   src: { type: String, default: '' },
   name: { type: String, default: '' },
+  clickable: { type: Boolean, default: false },
   size: {
     type: String,
     default: 'md',
@@ -22,9 +34,16 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['click'])
+
 const imageBroken = ref(false)
 
 const hasImage = computed(() => Boolean(props.src?.trim()) && !imageBroken.value)
+const isInteractive = computed(() => props.clickable && hasImage.value)
+const avatarTitle = computed(() => {
+  const displayName = String(props.name || '').trim() || '访客'
+  return isInteractive.value ? `${displayName} 的头像，点击查看大图` : displayName
+})
 
 const fallbackText = computed(() => {
   const text = String(props.name || '').trim()
@@ -40,6 +59,13 @@ watch(
 
 function onImageError() {
   imageBroken.value = true
+}
+
+function handleClick(event) {
+  if (!isInteractive.value) return
+  event?.preventDefault()
+  event?.stopPropagation()
+  emit('click', event)
 }
 </script>
 
@@ -81,5 +107,21 @@ function onImageError() {
 
 .comment-avatar--image {
   background: var(--app-surface-muted);
+}
+
+.comment-avatar--clickable {
+  cursor: zoom-in;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.comment-avatar--clickable:hover,
+.comment-avatar--clickable:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--blog-link);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blog-link) 14%, transparent);
+  outline: none;
 }
 </style>
