@@ -65,7 +65,9 @@
 
 <script setup>
 import { onBeforeUnmount, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { usePetDog } from '@/composables/usePetDog'
+import { usePetStore } from '@/stores/petStore'
 
 const legLabels = ['one', 'two', 'three', 'four']
 const petMoveSpeed = 0.06
@@ -81,10 +83,13 @@ const legWrapperEls = ref([])
 const legInnerEls = ref([])
 const tailWrapperEl = ref(null)
 const tailInnerEl = ref(null)
-const visible = ref(true)
-const hidden = ref(false)
-const hiding = ref(false)
-const returning = ref(false)
+const petStore = usePetStore()
+const {
+  visible,
+  hidden,
+  hiding,
+  returning,
+} = storeToRefs(petStore)
 let hideTimer = 0
 let returnTimer = 0
 
@@ -115,33 +120,25 @@ const {
 })
 
 function hidePet() {
-  if (hiding.value || hidden.value) return
+  if (!petStore.startHide()) return
 
   window.clearTimeout(hideTimer)
   window.clearTimeout(returnTimer)
   restPet('我先躲起来')
-  returning.value = false
-  hiding.value = true
 
   hideTimer = window.setTimeout(() => {
-    visible.value = false
-    hidden.value = true
-    hiding.value = false
+    petStore.finishHide()
   }, hideAnimationMs)
 }
 
 function showPet() {
-  if (!hidden.value && visible.value) return
+  if (!petStore.startReturn()) return
 
   window.clearTimeout(hideTimer)
   window.clearTimeout(returnTimer)
-  hidden.value = false
-  visible.value = true
-  hiding.value = false
-  returning.value = true
 
   returnTimer = window.setTimeout(() => {
-    returning.value = false
+    petStore.finishReturn()
     showTip('我回来啦', 1200)
   }, returnAnimationMs)
 }
@@ -149,6 +146,7 @@ function showPet() {
 onBeforeUnmount(() => {
   window.clearTimeout(hideTimer)
   window.clearTimeout(returnTimer)
+  petStore.settleTransition()
 })
 </script>
 

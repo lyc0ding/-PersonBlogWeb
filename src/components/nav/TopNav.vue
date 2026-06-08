@@ -18,6 +18,16 @@
             autocomplete="off"
           />
           <button type="submit" class="search-btn">搜索</button>
+          <button
+            type="button"
+            class="theme-toggle"
+            :disabled="isThemeTransitioning"
+            :aria-label="isDark ? '切换为浅色模式' : '切换为深色模式'"
+            :title="isDark ? '切换为浅色模式' : '切换为深色模式'"
+            @click="toggleTheme"
+          >
+            <i class="iconfont" :class="themeIcon" aria-hidden="true" />
+          </button>
         </form>
 
         <nav class="nav-links" aria-label="主导航">
@@ -34,7 +44,7 @@
         </nav>
       </div>
 
-      <div class="nav-actions">
+      <!-- <div class="nav-actions">
         <div class="dropdown-wrapper" @mouseenter="showDropdown" @mouseleave="hideDropdown">
           <i class="iconfont icon-gengduo dropdown-trigger" aria-hidden="true" />
           <transition name="fade">
@@ -46,18 +56,22 @@
             </ul>
           </transition>
         </div>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useSiteConfigStore } from '@/stores/siteConfigStore'
+import { useThemeStore } from '@/stores/themeStore'
 
 const router = useRouter()
 const siteConfigStore = useSiteConfigStore()
+const themeStore = useThemeStore()
+const { isDark } = storeToRefs(themeStore)
 
 const fallbackNavItems = [
   { label: '首页', path: '/' },
@@ -83,7 +97,9 @@ const navItems = computed(() => {
 })
 
 const keyword = ref('')
-const isDropdownVisible = ref(false)
+const isThemeTransitioning = ref(false)
+const themeIcon = computed(() => (isDark.value ? 'icon-wanshang' : 'icon-qingbaitian'))
+// const isDropdownVisible = ref(false)
 
 const blurTarget = (e) => {
   e?.currentTarget?.blur?.()
@@ -94,23 +110,75 @@ const onSearch = () => {
   router.push({ path: '/articles', query: { q: keyword.value } })
 }
 
-const showDropdown = () => {
-  isDropdownVisible.value = true
+const toggleTheme = async (event) => {
+  if (isThemeTransitioning.value) return
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const supportsViewTransition = typeof document.startViewTransition === 'function'
+
+  const applyTheme = async () => {
+    themeStore.toggle()
+    await nextTick()
+  }
+
+  if (!supportsViewTransition || prefersReducedMotion) {
+    await applyTheme()
+    return
+  }
+
+  const buttonRect = event?.currentTarget?.getBoundingClientRect?.()
+  const x = buttonRect ? buttonRect.left + buttonRect.width / 2 : window.innerWidth / 2
+  const y = buttonRect ? buttonRect.top + buttonRect.height / 2 : window.innerHeight / 2
+  const endRadius = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y)
+  )
+  const root = document.documentElement
+
+  isThemeTransitioning.value = true
+  root.classList.add('theme-transitioning')
+
+  const transition = document.startViewTransition(applyTheme)
+
+  try {
+    await transition.ready
+    const animation = root.animate(
+      {
+        clipPath: [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${endRadius}px at ${x}px ${y}px)`,
+        ],
+      },
+      {
+        duration: 650,
+        easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        pseudoElement: '::view-transition-new(root)',
+      }
+    )
+    await Promise.allSettled([animation.finished, transition.finished])
+  } finally {
+    root.classList.remove('theme-transitioning')
+    isThemeTransitioning.value = false
+  }
 }
 
-const hideDropdown = () => {
-  isDropdownVisible.value = false
-}
+// const showDropdown = () => {
+//   isDropdownVisible.value = true
+// }
 
-const handleMenuClick = (item) => {
-  console.log(`选择了: ${item}`)
-  isDropdownVisible.value = false
-}
+// const hideDropdown = () => {
+//   isDropdownVisible.value = false
+// }
 
-const navTo = () => {
-  isDropdownVisible.value = false
-  router.push('/admin')
-}
+// const handleMenuClick = (item) => {
+//   console.log(`选择了: ${item}`)
+//   isDropdownVisible.value = false
+// }
+
+// const navTo = () => {
+//   isDropdownVisible.value = false
+//   router.push('/admin')
+// }
 
 onMounted(() => {
   siteConfigStore.loadConfigs()
@@ -187,7 +255,7 @@ onMounted(() => {
 .search {
   display: flex;
   width: 100%;
-  max-width: 360px;
+  max-width: 404px;
   margin-left: auto;
   gap: 0;
 }
@@ -214,11 +282,12 @@ onMounted(() => {
   height: 34px;
   padding: 0 14px;
   border: 1px solid var(--blog-link);
-  border-radius: 0 2px 2px 0;
+  border-radius: 0;
   background: var(--blog-link);
   color: #fff;
   font-size: 14px;
   cursor: pointer;
+  margin-right: 10px;
 }
 
 .search-btn:hover {
@@ -260,10 +329,13 @@ onMounted(() => {
 }
 
 .theme-toggle {
-  padding: 8px;
-  border: none;
-  border-radius: 2px;
-  background: transparent;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--blog-input-border);
+  border-radius: 50%;
+  background: var(--app-surface);
   cursor: pointer;
   color: var(--blog-nav-link);
   display: inline-flex;
@@ -277,11 +349,35 @@ onMounted(() => {
   background-color: var(--blog-nav-link-hover-bg);
 }
 
+.theme-toggle:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
 .theme-toggle .iconfont {
   font-size: 20px;
 }
 
-.dropdown-wrapper {
+:global(::view-transition-old(root)),
+:global(::view-transition-new(root)) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:global(html.theme-transitioning::view-transition-old(root)),
+:global(html.theme-transitioning::view-transition-new(root)) {
+  pointer-events: none;
+}
+
+:global(html.theme-transitioning::view-transition-new(root)) {
+  z-index: 1;
+}
+
+:global(html.theme-transitioning::view-transition-old(root)) {
+  z-index: 0;
+}
+
+/* .dropdown-wrapper {
   position: relative;
   display: inline-block;
   cursor: pointer;
@@ -337,7 +433,7 @@ onMounted(() => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-6px);
-}
+} */
 
 @media (max-width: 720px) {
   .search {

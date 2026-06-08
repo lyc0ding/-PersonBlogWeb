@@ -138,6 +138,7 @@ onMounted(() => {
 
 .feature-banner__copy,
 .feature-banner__visual {
+    padding: 0 20px;
   position: relative;
   z-index: 1;
   min-width: 0;

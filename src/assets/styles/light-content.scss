@@ -207,7 +207,6 @@ html:not(.dark) {
     .feed-head {
         padding: 14px 16px;
         background: var(--app-surface);
-        border: 1px solid var(--blog-card-border);
         border-radius: 4px;
         box-shadow: var(--app-shadow-card);
     }
@@ -243,7 +242,7 @@ html:not(.dark) {
         box-shadow: var(--app-shadow-card);
     }
 
-    .hero-copy > p:last-child {
+    .hero-copy>p:last-child {
         color: var(--app-text-secondary);
     }
 
@@ -292,7 +291,7 @@ html:not(.dark) {
         border-left-color: var(--blog-card-border);
     }
 
-    .reply-item + .reply-item {
+    .reply-item+.reply-item {
         border-top-color: var(--blog-divider);
     }
 
