@@ -17,7 +17,9 @@
             placeholder="搜索关键字"
             autocomplete="off"
           />
-          <button type="submit" class="search-btn">搜索</button>
+          <button type="submit" class="search-btn" :disabled="searching">
+            {{ searching ? '搜索中' : '搜索' }}
+          </button>
           <button
             type="button"
             class="theme-toggle"
@@ -65,8 +67,10 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useSiteConfigStore } from '@/stores/siteConfigStore'
 import { useThemeStore } from '@/stores/themeStore'
+import { globalSearchService } from '@/api/search'
 
 const router = useRouter()
 const siteConfigStore = useSiteConfigStore()
@@ -97,6 +101,7 @@ const navItems = computed(() => {
 })
 
 const keyword = ref('')
+const searching = ref(false)
 const isThemeTransitioning = ref(false)
 const themeIcon = computed(() => (isDark.value ? 'icon-wanshang' : 'icon-qingbaitian'))
 // const isDropdownVisible = ref(false)
@@ -105,9 +110,25 @@ const blurTarget = (e) => {
   e?.currentTarget?.blur?.()
 }
 
-const onSearch = () => {
-  if (!keyword.value) return
-  router.push({ path: '/articles', query: { q: keyword.value } })
+const onSearch = async () => {
+  const safeKeyword = keyword.value.trim()
+  if (!safeKeyword || searching.value) return
+
+  searching.value = true
+  try {
+    const res = await globalSearchService({ keyword: safeKeyword, size: 1 })
+    const results = res?.data ?? res ?? []
+    const first = Array.isArray(results) ? results[0] : null
+    if (!first?.routePath) {
+      ElMessage.info('没有匹配到文章或朋友圈')
+      return
+    }
+    await router.push(first.routePath)
+  } catch (err) {
+    ElMessage.error(err?.message || '搜索失败，请稍后重试')
+  } finally {
+    searching.value = false
+  }
 }
 
 const toggleTheme = async (event) => {
@@ -292,6 +313,11 @@ onMounted(() => {
 
 .search-btn:hover {
   filter: brightness(1.05);
+}
+
+.search-btn:disabled {
+  cursor: default;
+  opacity: 0.72;
 }
 
 .nav-links {

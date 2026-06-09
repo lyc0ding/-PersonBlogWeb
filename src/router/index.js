@@ -8,9 +8,22 @@ const keepQueryRedirect = (path) => (to) => ({
     hash: to.hash,
 })
 
+const hasScrollRestoreMark = (key) => {
+    if (typeof sessionStorage === 'undefined' || !key) return false
+    return sessionStorage.getItem(`${key}:restore`) === '1'
+}
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     scrollBehavior(to, from, savedPosition) {
+        if (from.name === 'ArticleDetail' && to.name === 'Articles' && hasScrollRestoreMark('articles')) {
+            return false
+        }
+
+        if (from.name === 'MomentDetail' && to.name === 'Space' && hasScrollRestoreMark('space')) {
+            return false
+        }
+
         if (savedPosition) {
             return savedPosition
         }
@@ -24,13 +37,6 @@ const router = createRouter({
 
         if (to.name === 'ArticleDetail' || to.name === 'MomentDetail') {
             return { top: 0 }
-        }
-
-        if (
-            (from.name === 'ArticleDetail' && to.name === 'Articles') ||
-            (from.name === 'MomentDetail' && to.name === 'Space')
-        ) {
-            return false
         }
 
         return { top: 0 }

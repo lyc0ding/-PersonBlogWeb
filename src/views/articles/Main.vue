@@ -81,7 +81,7 @@
 </template>
 <script setup>
 import { nextTick, onActivated, onBeforeUpdate, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { publicArticlePageService } from '@/api/article'
 import {
   hasWindowScrollRestoreMark,
@@ -148,11 +148,14 @@ function openArticle(id) {
 }
 
 function rememberArticleScroll() {
+  let scrollTop = feedRef.value ? feedRef.value.scrollTop : window.scrollY || document.documentElement.scrollTop
   rememberPageSnapshotForReturn('articles', {
     query: { ...query },
     contentList: contentList.value,
     total: total.value,
     currentArticleId: currentArticleId.value,
+    scrollTop: scrollTop,
+    useFeedScroll: !!feedRef.value,
   })
 }
 
@@ -170,7 +173,18 @@ async function restoreArticleSnapshot() {
   syncArticleObserver()
   const currentItem = contentList.value.find((item) => String(item.id) === String(currentArticleId.value))
   emitCurrentArticle(currentItem || contentList.value[0])
-  restoreWindowScrollIfMarked('articles')
+  
+  if (snapshot.scrollTop != null) {
+    await nextTick()
+    setTimeout(() => {
+      if(snapshot.useFeedScroll && feedRef.value){
+        feedRef.value.scrollTop = snapshot.scrollTop
+      }else{
+        window.scrollTo(0, snapshot.scrollTop)
+      }
+    }, 80)
+  }
+  
   return true
 }
 
@@ -283,7 +297,18 @@ onMounted(() => {
 })
 
 onActivated(() => {
-  restoreWindowScrollIfMarked('articles')
+//   restoreWindowScrollIfMarked('articles')
+})
+
+onBeforeRouteLeave((to) => {
+  if (to.name === 'ArticleDetail') {
+    rememberArticleScroll()
+  }
+})
+
+onBeforeRouteLeave((to, from, next) => {
+  rememberArticleScroll()
+  next()
 })
 
 onUnmounted(() => {

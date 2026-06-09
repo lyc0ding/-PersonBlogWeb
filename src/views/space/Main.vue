@@ -118,7 +118,7 @@
 
 <script setup>
 import { computed, nextTick, onActivated, onBeforeUpdate, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import PersonBox from '@/components/sidebar/BlogProfileCard.vue'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import { timelinePageService } from '@/api/timeline'
@@ -316,6 +316,12 @@ onMounted(() => {
 
 onActivated(() => {
   restoreWindowScrollIfMarked('space')
+})
+
+onBeforeRouteLeave((to) => {
+  if (to.name === 'MomentDetail') {
+    rememberMomentScroll()
+  }
 })
 
 onUnmounted(() => {

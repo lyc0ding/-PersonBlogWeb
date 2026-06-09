@@ -50,7 +50,7 @@
           </header>
 
           <section class="content-panel">
-            <article class="detail-body" v-html="detail.contentHtml || textToHtml(detail.contentText || detail.summary)" />
+            <article class="detail-body" v-html="renderedContentHtml" />
           </section>
         </article>
 
@@ -136,11 +136,12 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { publicArticleDetailService } from '@/api/article'
 import { commentPageService, commentSubmitService } from '@/api/comment'
+import { blocksToHtml, normalizeArticleHtml, textToHtml } from '@/utils/articleContent'
 
 const route = useRoute()
 const router = useRouter()
@@ -164,6 +165,12 @@ const detailCommentForm = reactive({
   nickname: localStorage.getItem('personblog_comment_nickname') || '',
   email: localStorage.getItem('personblog_comment_email') || '',
   website: localStorage.getItem('personblog_comment_website') || '',
+})
+
+const renderedContentHtml = computed(() => {
+  return normalizeArticleHtml(detail.value.contentHtml) ||
+    blocksToHtml(detail.value.contentBlocks) ||
+    textToHtml(detail.value.contentText || detail.value.summary)
 })
 
 async function loadArticleDetail() {
@@ -282,23 +289,6 @@ function formatDate(value) {
 
 function displayAvatarText(name = '') {
   return name.trim().slice(0, 1) || '访'
-}
-
-function textToHtml(text = '') {
-  return String(text)
-    .split(/\n+/)
-    .filter(Boolean)
-    .map((line) => `<p>${escapeHtml(line)}</p>`)
-    .join('')
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 }
 
 onMounted(loadArticleDetail)
@@ -429,7 +419,7 @@ watch(
 }
 
 .content-panel {
-  padding: 32px;
+  padding: 34px clamp(18px, 4vw, 42px);
 }
 
 .detail-body {
@@ -442,28 +432,93 @@ watch(
 }
 
 .detail-body :deep(p) {
-  margin: 0 0 1.05em;
+  margin: 0 0 1.08em;
 }
 
 .detail-body :deep(h1),
 .detail-body :deep(h2),
-.detail-body :deep(h3) {
+.detail-body :deep(h3),
+.detail-body :deep(h4) {
+  margin: 1.55em 0 0.72em;
   color: var(--app-text-primary);
   line-height: 1.45;
 }
 
-.detail-body :deep(img) {
-  max-width: 100%;
-  height: auto;
+.detail-body :deep(ul),
+.detail-body :deep(ol) {
+  margin: 0 0 1.12em 1.25em;
+  padding: 0;
+}
+
+.detail-body :deep(li + li) {
+  margin-top: 0.35em;
+}
+
+.detail-body :deep(blockquote) {
+  margin: 1.25em 0;
+  padding: 12px 16px;
+  color: var(--app-text-secondary);
+  background: var(--app-surface-muted);
+  border-left: 4px solid var(--blog-link);
+  border-radius: 0 6px 6px 0;
+}
+
+.detail-body :deep(figure.article-image) {
+  margin: 24px 0;
+  padding: 10px;
+  background: var(--app-surface-muted);
+  border: 1px solid var(--blog-card-border);
   border-radius: 8px;
 }
 
+.detail-body :deep(img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.detail-body :deep(figcaption) {
+  margin-top: 8px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.detail-body :deep(pre.article-code),
 .detail-body :deep(pre) {
-  padding: 14px;
+  position: relative;
+  margin: 24px 0;
+  padding: 44px 16px 16px;
   overflow: auto;
   color: #f8fafc;
-  background: var(--app-code-header-bg);
+  background: #111827;
+  border: 1px solid #263244;
   border-radius: 8px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.detail-body :deep(pre.article-code::before) {
+  content: attr(data-title);
+  position: absolute;
+  inset: 0 0 auto;
+  height: 30px;
+  padding: 7px 12px;
+  background: #1f2937;
+  color: #cbd5e1;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.detail-body :deep(pre code) {
+  display: block;
+  min-width: max-content;
 }
 
 .detail-comments {

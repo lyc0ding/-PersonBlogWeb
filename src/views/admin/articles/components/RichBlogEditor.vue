@@ -104,7 +104,7 @@
       <span>支持 HTML、表情、图片、代码块与常用文字格式</span>
     </div>
 
-    <el-dialog v-model="codeDialogVisible" title="插入代码块" width="680px" @open="saveSelection">
+    <el-dialog v-model="codeDialogVisible" title="插入代码块" width="680px" @closed="clearInsertionMarker">
       <el-form label-position="top">
         <div class="code-form-row">
           <el-form-item label="语言">
@@ -146,6 +146,12 @@ import { ElMessage } from 'element-plus'
 import { Delete, Picture, Sunny, Tickets } from '@element-plus/icons-vue'
 import { CODE_LANGUAGES } from '@/constants/article'
 import { resolveUploadUrl, uploadImageService } from '@/api/admin/upload'
+import {
+  getCodeTitle,
+  normalizeArticleHtml,
+  readCodeLanguage,
+  sanitizeClassToken,
+} from '@/utils/articleContent'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -157,6 +163,7 @@ const emit = defineEmits(['update:modelValue', 'text-change', 'blocks-change'])
 const editorRef = ref(null)
 const imageInputRef = ref(null)
 const savedRange = ref(null)
+const insertionMarkerRef = ref(null)
 const blockFormat = ref('p')
 const plainText = ref('')
 const uploading = ref(false)
@@ -203,7 +210,7 @@ watch(
 
 function setEditorHtml(html, shouldEmit = false) {
   if (!editorRef.value) return
-  editorRef.value.innerHTML = sanitizeHtml(html)
+  editorRef.value.innerHTML = normalizeArticleHtml(sanitizeHtml(html))
   updateDerivedState(shouldEmit)
 }
 
@@ -213,7 +220,7 @@ function syncEditor() {
 
 function updateDerivedState(shouldEmit) {
   if (!editorRef.value) return
-  const html = sanitizeHtml(editorRef.value.innerHTML)
+  const html = normalizeArticleHtml(sanitizeHtml(editorRef.value.innerHTML))
   const text = extractPlainText(html)
   plainText.value = text
   if (!shouldEmit) return
@@ -323,20 +330,23 @@ async function handleImageFile(event) {
 }
 
 function insertImage(url, alt = '') {
-  restoreSelection()
-  const html = [
-    '<figure class="article-image">',
-    `<img src="${escapeAttribute(url)}" alt="${escapeAttribute(alt)}">`,
-    '<figcaption>图片说明</figcaption>',
-    '</figure><p><br></p>',
-  ].join('')
-  document.execCommand('insertHTML', false, html)
-  saveSelection()
-  syncEditor()
+  const figure = document.createElement('figure')
+  figure.className = 'article-image'
+
+  const img = document.createElement('img')
+  img.src = url
+  img.alt = alt
+  figure.appendChild(img)
+
+  const caption = document.createElement('figcaption')
+  caption.textContent = '图片说明'
+  figure.appendChild(caption)
+
+  insertBlockNodes([figure])
 }
 
 function openCodeDialog() {
-  saveSelection()
+  placeInsertionMarker()
   codeDialogVisible.value = true
 }
 
@@ -345,23 +355,25 @@ function insertCodeBlock() {
     ElMessage.warning('请填写代码内容')
     return
   }
-  restoreSelection()
   const language = codeForm.language || 'plaintext'
   const filename = codeForm.filename.trim()
-  const title = filename || language
-  const html = [
-    `<pre class="article-code" data-language="${escapeAttribute(language)}" data-filename="${escapeAttribute(filename)}">`,
-    `<code class="language-${escapeAttribute(language)}">`,
-    escapeHtml(codeForm.content),
-    '</code></pre>',
-    `<p class="code-caption">${escapeHtml(title)}</p><p><br></p>`,
-  ].join('')
-  document.execCommand('insertHTML', false, html)
+  const title = getCodeTitle(language, filename)
+
+  const pre = document.createElement('pre')
+  pre.className = 'article-code'
+  pre.dataset.language = language
+  pre.dataset.filename = filename
+  pre.dataset.title = title
+
+  const code = document.createElement('code')
+  code.className = `language-${sanitizeClassToken(language)}`
+  code.textContent = codeForm.content
+  pre.appendChild(code)
+
+  insertBlockNodes([pre])
   codeDialogVisible.value = false
   codeForm.filename = ''
   codeForm.content = ''
-  saveSelection()
-  syncEditor()
 }
 
 function handlePaste(event) {
@@ -371,12 +383,292 @@ function handlePaste(event) {
   const html = data?.getData('text/html')
   const text = data?.getData('text/plain')
   if (html) {
-    document.execCommand('insertHTML', false, sanitizeHtml(html))
+    document.execCommand('insertHTML', false, normalizeArticleHtml(sanitizeHtml(html)))
   } else if (text) {
     document.execCommand('insertText', false, text)
   }
   saveSelection()
   syncEditor()
+}
+
+function insertBlockNodes(nodes) {
+  const editor = editorRef.value
+  if (!editor) return
+
+  let marker = getInsertionMarker()
+
+  if (!marker) {
+    restoreSelection()
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    let range = selection.getRangeAt(0)
+    if (!editor.contains(range.commonAncestorContainer)) {
+      range = document.createRange()
+      range.selectNodeContents(editor)
+      range.collapse(false)
+    }
+
+    range.deleteContents()
+    marker = createInsertionMarker()
+    range.insertNode(marker)
+  }
+
+  const trailingParagraph = createEmptyParagraph()
+  let caretTarget = trailingParagraph
+  let caretAtStart = false
+  const embeddedBlock = findEmbeddedBlock(marker)
+
+  if (embeddedBlock) {
+    const parent = embeddedBlock.parentNode
+    if (!parent) return
+    marker.remove()
+    const referenceNode = embeddedBlock.nextSibling
+    nodes.forEach((node) => parent.insertBefore(node, referenceNode))
+    parent.insertBefore(trailingParagraph, referenceNode)
+    placeCaretInBlock(caretTarget, caretAtStart)
+    saveSelection()
+    syncEditor()
+    return
+  }
+
+  const block = findEditableBlock(marker)
+  if (block?.tagName?.toLowerCase() === 'li') {
+    const result = insertBlocksAroundListItem(block, marker, nodes, trailingParagraph)
+    if (result) {
+      placeCaretInBlock(result.caretTarget, result.caretAtStart)
+      saveSelection()
+      syncEditor()
+      return
+    }
+  }
+
+  if (block && block !== editor) {
+    const beforeBlock = cloneBlockAroundMarker(block, marker, 'before')
+    const afterBlock = cloneBlockAroundMarker(block, marker, 'after')
+    const parent = block.parentNode
+    if (!parent) return
+
+    if (beforeBlock) parent.insertBefore(beforeBlock, block)
+    nodes.forEach((node) => parent.insertBefore(node, block))
+    if (afterBlock) {
+      parent.insertBefore(afterBlock, block)
+      caretTarget = afterBlock
+      caretAtStart = true
+    } else {
+      parent.insertBefore(trailingParagraph, block)
+    }
+    block.remove()
+  } else {
+    const topLevelParts = splitTopLevelAroundMarker(editor, marker)
+    if (topLevelParts.before) editor.insertBefore(topLevelParts.before, marker)
+    nodes.forEach((node) => editor.insertBefore(node, marker))
+    if (topLevelParts.after) {
+      editor.insertBefore(topLevelParts.after, marker)
+      caretTarget = topLevelParts.after
+      caretAtStart = true
+    } else {
+      editor.insertBefore(trailingParagraph, marker)
+    }
+    marker.remove()
+  }
+
+  placeCaretInBlock(caretTarget, caretAtStart)
+  saveSelection()
+  insertionMarkerRef.value = null
+  syncEditor()
+}
+
+function placeInsertionMarker() {
+  const editor = editorRef.value
+  if (!editor) return
+
+  clearInsertionMarker()
+  restoreSelection()
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return
+
+  let range = selection.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) {
+    range = document.createRange()
+    range.selectNodeContents(editor)
+    range.collapse(false)
+  }
+
+  const markerRange = range.cloneRange()
+  markerRange.collapse(false)
+  const marker = createInsertionMarker()
+  markerRange.insertNode(marker)
+  insertionMarkerRef.value = marker
+}
+
+function createInsertionMarker() {
+  const marker = document.createElement('span')
+  marker.dataset.editorInsertMarker = 'true'
+  marker.style.display = 'none'
+  return marker
+}
+
+function getInsertionMarker() {
+  const marker = insertionMarkerRef.value
+  if (marker && editorRef.value?.contains(marker)) {
+    insertionMarkerRef.value = null
+    return marker
+  }
+  insertionMarkerRef.value = null
+  return null
+}
+
+function clearInsertionMarker() {
+  const marker = insertionMarkerRef.value
+  if (marker?.parentNode) {
+    const parent = marker.parentNode
+    marker.remove()
+    parent.normalize?.()
+  }
+  insertionMarkerRef.value = null
+}
+
+function findEmbeddedBlock(node) {
+  let current = node.parentNode
+  while (current && current !== editorRef.value) {
+    if (
+      current.nodeType === Node.ELEMENT_NODE &&
+      current.matches('figure.article-image,pre.article-code')
+    ) {
+      return current
+    }
+    current = current.parentNode
+  }
+  return null
+}
+
+function findEditableBlock(node) {
+  let current = node.parentNode
+  while (current && current !== editorRef.value) {
+    if (
+      current.nodeType === Node.ELEMENT_NODE &&
+      current.matches('p,h2,h3,h4,blockquote,li,div')
+    ) {
+      return current
+    }
+    current = current.parentNode
+  }
+  return null
+}
+
+function cloneBlockAroundMarker(block, marker, side) {
+  const range = document.createRange()
+  range.selectNodeContents(block)
+  if (side === 'before') {
+    range.setEndBefore(marker)
+  } else {
+    range.setStartAfter(marker)
+  }
+  const fragment = range.cloneContents()
+  if (!hasMeaningfulContent(fragment)) return null
+  const clone = block.cloneNode(false)
+  clone.appendChild(fragment)
+  return clone
+}
+
+function insertBlocksAroundListItem(listItem, marker, nodes, trailingParagraph) {
+  const list = listItem.parentNode
+  const parent = list?.parentNode
+  const listTag = list?.tagName?.toLowerCase()
+  if (!parent || !['ul', 'ol'].includes(listTag)) return null
+
+  const beforeItem = cloneBlockAroundMarker(listItem, marker, 'before')
+  const afterItem = cloneBlockAroundMarker(listItem, marker, 'after')
+  const beforeList = list.cloneNode(false)
+  const afterList = list.cloneNode(false)
+
+  while (list.firstChild && list.firstChild !== listItem) {
+    beforeList.appendChild(list.firstChild)
+  }
+  if (beforeItem) beforeList.appendChild(beforeItem)
+  if (afterItem) afterList.appendChild(afterItem)
+
+  let current = listItem.nextSibling
+  while (current) {
+    const next = current.nextSibling
+    afterList.appendChild(current)
+    current = next
+  }
+
+  listItem.remove()
+  if (hasMeaningfulContent(beforeList)) parent.insertBefore(beforeList, list)
+  nodes.forEach((node) => parent.insertBefore(node, list))
+
+  if (hasMeaningfulContent(afterList)) {
+    parent.insertBefore(afterList, list)
+    list.remove()
+    return {
+      caretTarget: afterItem || afterList.querySelector('li'),
+      caretAtStart: true,
+    }
+  }
+
+  parent.insertBefore(trailingParagraph, list)
+  list.remove()
+  return {
+    caretTarget: trailingParagraph,
+    caretAtStart: false,
+  }
+}
+
+function createEmptyParagraph() {
+  const paragraph = document.createElement('p')
+  paragraph.appendChild(document.createElement('br'))
+  return paragraph
+}
+
+function splitTopLevelAroundMarker(editor, marker) {
+  const before = document.createElement('p')
+  const after = document.createElement('p')
+
+  let current = marker.previousSibling
+  while (current && isInlineTopLevelNode(current)) {
+    const previous = current.previousSibling
+    before.insertBefore(current, before.firstChild)
+    current = previous
+  }
+
+  current = marker.nextSibling
+  while (current && isInlineTopLevelNode(current)) {
+    const next = current.nextSibling
+    after.appendChild(current)
+    current = next
+  }
+
+  return {
+    before: hasMeaningfulContent(before) ? before : null,
+    after: hasMeaningfulContent(after) ? after : null,
+  }
+}
+
+function isInlineTopLevelNode(node) {
+  return node.nodeType === Node.TEXT_NODE || node.nodeName === 'BR' || node.nodeName === 'SPAN'
+}
+
+function placeCaretInBlock(block, atStart = false) {
+  if (!block) return
+  const range = document.createRange()
+  range.selectNodeContents(block)
+  range.collapse(atStart)
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+}
+
+function hasMeaningfulContent(node) {
+  if (!node) return false
+  if ((node.textContent || '').replace(/\u200B/g, '').trim()) return true
+  return Array.from(node.childNodes || []).some((child) => {
+    if (child.nodeType !== Node.ELEMENT_NODE) return false
+    const tag = child.tagName.toLowerCase()
+    return ['img', 'pre', 'figure', 'hr'].includes(tag) || hasMeaningfulContent(child)
+  })
 }
 
 function sanitizeHtml(html) {
@@ -399,6 +691,9 @@ function cleanNode(node) {
   }
 
   const tag = node.tagName.toLowerCase()
+  if (node.dataset?.editorInsertMarker) {
+    return document.createTextNode('')
+  }
   const allowedTags = new Set([
     'a', 'b', 'blockquote', 'br', 'code', 'del', 'div', 'em', 'figcaption',
     'figure', 'h2', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'mark', 'ol', 'p',
@@ -428,8 +723,9 @@ function copySafeAttributes(source, target) {
       if (style) target.setAttribute('style', style)
       return
     }
-    if (name === 'class' && ['code', 'pre', 'span'].includes(tag)) {
-      target.setAttribute('class', value.replace(/[^\w\s-]/g, ''))
+    if (name === 'class' && ['code', 'div', 'figure', 'p', 'pre', 'span'].includes(tag)) {
+      const className = filterClassNames(value)
+      if (className) target.setAttribute('class', className)
       return
     }
     if (name.startsWith('data-') && tag === 'pre') {
@@ -552,26 +848,16 @@ function htmlToBlocks(html) {
   return blocks.length ? blocks : [{ id: createBlockId(), type: 'paragraph', content: '' }]
 }
 
-function readCodeLanguage(codeNode) {
-  const className = codeNode?.getAttribute('class') || ''
-  return className.split(/\s+/).find((item) => item.startsWith('language-'))?.replace('language-', '')
+function filterClassNames(value) {
+  const allowed = new Set(['article-code', 'article-image', 'code-caption'])
+  return String(value || '')
+    .split(/\s+/)
+    .filter((item) => /^[\w-]+$/.test(item) && (allowed.has(item) || item.startsWith('language-')))
+    .join(' ')
 }
 
 function createBlockId() {
   return `rich_${Date.now()}_${Math.random().toString(16).slice(2)}`
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function escapeAttribute(value) {
-  return escapeHtml(value).replace(/`/g, '&#96;')
 }
 </script>
 
@@ -581,9 +867,13 @@ function escapeAttribute(value) {
   border: 1px solid var(--app-border);
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: var(--app-shadow-card, 0 10px 28px rgba(15, 23, 42, 0.05));
 }
 
 .editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -623,11 +913,14 @@ function escapeAttribute(value) {
 
 .editor-content {
   min-height: 560px;
-  padding: 22px 26px;
+  padding: 28px clamp(18px, 4vw, 42px);
   outline: none;
   color: var(--app-text-primary);
   font-size: 16px;
   line-height: 1.85;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--blog-link) 4%, transparent), transparent),
+    var(--app-surface);
 }
 
 .editor-content:empty::before {
@@ -648,21 +941,27 @@ function escapeAttribute(value) {
 }
 
 .editor-content :deep(blockquote) {
-  margin: 1em 0;
-  padding: 10px 14px;
+  margin: 1.2em 0;
+  padding: 12px 16px;
   border-left: 4px solid var(--blog-link);
+  border-radius: 0 6px 6px 0;
   background: var(--app-surface-muted);
   color: var(--app-text-secondary);
 }
 
 .editor-content :deep(figure.article-image) {
-  margin: 18px 0;
+  margin: 22px 0;
+  padding: 10px;
+  background: var(--app-surface-muted);
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
 }
 
 .editor-content :deep(figure.article-image img) {
   max-width: 100%;
   border-radius: 6px;
   display: block;
+  margin: 0 auto;
 }
 
 .editor-content :deep(figcaption) {
@@ -673,22 +972,44 @@ function escapeAttribute(value) {
 }
 
 .editor-content :deep(pre.article-code) {
-  margin: 16px 0 6px;
-  padding: 14px;
-  border-radius: 6px;
+  position: relative;
+  margin: 22px 0;
+  padding: 44px 16px 16px;
+  border: 1px solid #263244;
+  border-radius: 8px;
   overflow: auto;
-  background: #282c34;
+  background: #111827;
   color: #f8fafc;
   font-family: Consolas, "Courier New", monospace;
   font-size: 13px;
   line-height: 1.6;
   white-space: pre;
+  tab-size: 2;
+}
+
+.editor-content :deep(pre.article-code::before) {
+  content: attr(data-title);
+  position: absolute;
+  inset: 0 0 auto;
+  height: 30px;
+  padding: 7px 12px;
+  background: #1f2937;
+  color: #cbd5e1;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.editor-content :deep(pre.article-code code) {
+  display: block;
+  min-width: max-content;
 }
 
 .editor-content :deep(.code-caption) {
-  margin: 0 0 14px;
+  margin: -12px 0 18px;
   color: var(--app-text-muted);
   font-size: 12px;
+  text-align: center;
 }
 
 .editor-footer {

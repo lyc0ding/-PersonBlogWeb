@@ -8,26 +8,35 @@
 
     <img v-if="form.coverUrl" :src="form.coverUrl" alt="文章封面" class="cover">
 
-    <section v-if="form.contentHtml" class="preview-body" v-html="form.contentHtml" />
+    <section v-if="renderedContentHtml" class="preview-body" v-html="renderedContentHtml" />
     <el-empty v-else description="还没有正文内容" />
   </article>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { ARTICLE_TYPE } from '@/constants/article'
+import { blocksToHtml, normalizeArticleHtml, textToHtml } from '@/utils/articleContent'
 
-defineProps({
+const props = defineProps({
   form: { type: Object, required: true },
+})
+
+const renderedContentHtml = computed(() => {
+  return normalizeArticleHtml(props.form.contentHtml) ||
+    blocksToHtml(props.form.contentBlocks) ||
+    textToHtml(props.form.contentText)
 })
 </script>
 
 <style scoped>
 .article-preview {
   min-height: 560px;
-  padding: 26px;
+  padding: 28px clamp(18px, 4vw, 42px);
   background: var(--app-surface);
   border: 1px solid var(--app-border);
   border-radius: 8px;
+  box-shadow: var(--app-shadow-card, 0 10px 28px rgba(15, 23, 42, 0.05));
 }
 
 .preview-header {
@@ -66,6 +75,7 @@ defineProps({
   color: var(--app-text-secondary);
   font-size: 16px;
   line-height: 1.85;
+  word-break: break-word;
 }
 
 .preview-body :deep(p) {
@@ -81,18 +91,26 @@ defineProps({
 }
 
 .preview-body :deep(blockquote) {
-  margin: 1em 0;
-  padding: 10px 14px;
+  margin: 1.2em 0;
+  padding: 12px 16px;
   border-left: 4px solid var(--blog-link);
+  border-radius: 0 6px 6px 0;
   background: var(--app-surface-muted);
 }
 
 .preview-body :deep(figure.article-image) {
-  margin: 18px 0;
+  margin: 22px 0;
+  padding: 10px;
+  background: var(--app-surface-muted);
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
 }
 
 .preview-body :deep(figure.article-image img) {
+  display: block;
   max-width: 100%;
+  height: auto;
+  margin: 0 auto;
   border-radius: 6px;
 }
 
@@ -105,14 +123,42 @@ defineProps({
 }
 
 .preview-body :deep(pre.article-code) {
-  margin: 16px 0 6px;
-  padding: 14px;
-  border-radius: 6px;
+  position: relative;
+  margin: 22px 0;
+  padding: 44px 16px 16px;
+  border: 1px solid #263244;
+  border-radius: 8px;
   overflow: auto;
-  background: #282c34;
+  background: #111827;
   color: #f8fafc;
   font-family: Consolas, "Courier New", monospace;
   font-size: 13px;
   line-height: 1.6;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.preview-body :deep(pre.article-code::before) {
+  content: attr(data-title);
+  position: absolute;
+  inset: 0 0 auto;
+  height: 30px;
+  padding: 7px 12px;
+  background: #1f2937;
+  color: #cbd5e1;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.preview-body :deep(pre.article-code code) {
+  display: block;
+  min-width: max-content;
+}
+
+@media (max-width: 720px) {
+  .article-preview {
+    padding: 22px 18px;
+  }
 }
 </style>
