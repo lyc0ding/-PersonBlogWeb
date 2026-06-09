@@ -1,5 +1,5 @@
 <template>
-  <div ref="feedRef" class="article-feed">
+  <div class="article-feed">
     <div class="feed-toolbar">
       <el-input
         v-model="query.keyword"
@@ -29,9 +29,6 @@
       v-else
       :key="item.id"
       class="post-card"
-      :class="{ 'is-current': String(item.id) === String(currentArticleId) }"
-      :data-current-id="item.id"
-      :ref="(el) => setArticleCardRef(item.id, el)"
       role="link"
       tabindex="0"
       @click="openArticle(item.id)"
@@ -44,7 +41,7 @@
         <h2 class="post-title">
           <RouterLink
             :to="{ name: 'ArticleDetail', params: { id: item.id } }"
-            @click.stop="rememberArticleScroll"
+            @click.stop
           >
             {{ item.title }}
           </RouterLink>
@@ -59,7 +56,7 @@
         <p class="post-more">
           <RouterLink
             :to="{ name: 'ArticleDetail', params: { id: item.id } }"
-            @click.stop="rememberArticleScroll"
+            @click.stop
           >
             阅读全文
           </RouterLink>
@@ -80,28 +77,16 @@
   </div>
 </template>
 <script setup>
-import { nextTick, onActivated, onBeforeUpdate, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { publicArticlePageService } from '@/api/article'
-import {
-  hasWindowScrollRestoreMark,
-  readPageSnapshotForReturn,
-  rememberPageSnapshotForReturn,
-  restoreWindowScrollIfMarked,
-} from '@/utils/scrollMemory'
 
 const route = useRoute()
 const router = useRouter()
-const emit = defineEmits(['current-location-change', 'toc-items-change'])
-const feedRef = ref(null)
 const loading = ref(false)
 const error = ref('')
 const contentList = ref([])
 const total = ref(0)
-const currentArticleId = ref(null)
-const articleCardRefs = new Map()
-const visibleArticleIds = new Map()
-let articleObserver = null
 
 const query = reactive({
   pageNum: 1,
@@ -126,15 +111,9 @@ async function loadArticles() {
     const page = res?.data ?? res ?? {}
     contentList.value = page.records ?? page.list ?? []
     total.value = page.total ?? contentList.value.length
-    emitTocItems()
-    await nextTick()
-    syncArticleObserver()
-    emitCurrentArticle(contentList.value[0])
   } catch (err) {
     contentList.value = []
     total.value = 0
-    emitTocItems()
-    emitCurrentArticle(null)
     error.value = err?.message || '文章列表加载失败，请确认后端 `/article/public/page` 可访问。'
   } finally {
     loading.value = false
@@ -143,49 +122,7 @@ async function loadArticles() {
 
 function openArticle(id) {
   if (!id) return
-  rememberArticleScroll()
   router.push({ name: 'ArticleDetail', params: { id } })
-}
-
-function rememberArticleScroll() {
-  let scrollTop = feedRef.value ? feedRef.value.scrollTop : window.scrollY || document.documentElement.scrollTop
-  rememberPageSnapshotForReturn('articles', {
-    query: { ...query },
-    contentList: contentList.value,
-    total: total.value,
-    currentArticleId: currentArticleId.value,
-    scrollTop: scrollTop,
-    useFeedScroll: !!feedRef.value,
-  })
-}
-
-async function restoreArticleSnapshot() {
-  const snapshot = readPageSnapshotForReturn('articles')
-  if (!snapshot?.contentList) return false
-
-  Object.assign(query, snapshot.query || {})
-  contentList.value = Array.isArray(snapshot.contentList) ? snapshot.contentList : []
-  total.value = Number.isFinite(snapshot.total) ? snapshot.total : contentList.value.length
-  currentArticleId.value = snapshot.currentArticleId ?? null
-  emitTocItems()
-
-  await nextTick()
-  syncArticleObserver()
-  const currentItem = contentList.value.find((item) => String(item.id) === String(currentArticleId.value))
-  emitCurrentArticle(currentItem || contentList.value[0])
-  
-  if (snapshot.scrollTop != null) {
-    await nextTick()
-    setTimeout(() => {
-      if(snapshot.useFeedScroll && feedRef.value){
-        feedRef.value.scrollTop = snapshot.scrollTop
-      }else{
-        window.scrollTo(0, snapshot.scrollTop)
-      }
-    }, 80)
-  }
-  
-  return true
 }
 
 function resolveCategory(post) {
@@ -197,122 +134,11 @@ function formatDate(value) {
   return String(value).replace(/-/g, '.').slice(0, 16)
 }
 
-function buildCurrentArticleLocation(item) {
-  if (!item) return null
-  const title = String(item.title || '无标题文章').trim()
-  return {
-    id: item.id,
-    title: title || '无标题文章',
-    icon: 'icon-wenjian',
-    type: 'article',
-  }
-}
-
-function emitTocItems() {
-  emit('toc-items-change', contentList.value.map(buildCurrentArticleLocation).filter(Boolean))
-}
-
-function emitCurrentArticle(item) {
-  const location = buildCurrentArticleLocation(item)
-  currentArticleId.value = location?.id ?? null
-  emit('current-location-change', location)
-}
-
-function setArticleCardRef(id, el) {
-  if (el && id != null) {
-    articleCardRefs.set(String(id), el)
-  }
-}
-
-function syncArticleObserver() {
-  articleObserver?.disconnect()
-  visibleArticleIds.clear()
-
-  if (!articleCardRefs.size) return
-
-  if (typeof IntersectionObserver === 'undefined') {
-    emitCurrentArticle(contentList.value[0])
-    return
-  }
-
-  articleObserver = new IntersectionObserver(handleArticleIntersections, {
-    root: null,
-    rootMargin: '-130px 0px -45% 0px',
-    threshold: [0, 0.12, 0.35, 0.65],
-  })
-
-  articleCardRefs.forEach((el) => articleObserver.observe(el))
-}
-
-function handleArticleIntersections(entries) {
-  entries.forEach((entry) => {
-    const id = String(entry.target.dataset.currentId || '')
-    if (!id) return
-
-    if (entry.isIntersecting) {
-      visibleArticleIds.set(id, entry.intersectionRatio)
-    } else {
-      visibleArticleIds.delete(id)
-    }
-  })
-
-  const currentId = Array.from(visibleArticleIds.entries())
-    .sort((a, b) => b[1] - a[1])[0]?.[0]
-
-  if (!currentId || currentId === String(currentArticleId.value)) return
-
-  const currentItem = contentList.value.find((item) => String(item.id) === currentId)
-  emitCurrentArticle(currentItem)
-}
-
-function scrollToLocation(location = null) {
-  const id = typeof location === 'object' ? location?.id : (location ?? currentArticleId.value)
-  const target = id != null ? articleCardRefs.get(String(id)) : null
-  if (id != null) {
-    const currentItem = contentList.value.find((item) => String(item.id) === String(id))
-    emitCurrentArticle(currentItem)
-  }
-  target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-}
-
-defineExpose({
-  scrollToLocation,
-})
-
-onBeforeUpdate(() => {
-  articleCardRefs.clear()
-})
-
 onMounted(() => {
   if (typeof route.query.q === 'string') {
     query.keyword = route.query.q
   }
-  if (hasWindowScrollRestoreMark('articles')) {
-    restoreArticleSnapshot().then((restored) => {
-      if (!restored) loadArticles()
-    })
-  } else {
-    loadArticles()
-  }
-})
-
-onActivated(() => {
-//   restoreWindowScrollIfMarked('articles')
-})
-
-onBeforeRouteLeave((to) => {
-  if (to.name === 'ArticleDetail') {
-    rememberArticleScroll()
-  }
-})
-
-onBeforeRouteLeave((to, from, next) => {
-  rememberArticleScroll()
-  next()
-})
-
-onUnmounted(() => {
-  articleObserver?.disconnect()
+  loadArticles()
 })
 
 watch(
@@ -360,8 +186,7 @@ watch(
 
 .post-card:hover,
 .post-card:focus-within,
-.post-card:focus-visible,
-.post-card.is-current {
+.post-card:focus-visible {
   box-shadow:
     inset 3px 0 0 var(--blog-link),
     var(--app-shadow-card, 0 10px 24px rgba(15, 23, 42, 0.06));

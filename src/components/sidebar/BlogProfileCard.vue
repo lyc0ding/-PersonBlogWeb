@@ -46,25 +46,6 @@
         <i class="iconfont icon-youjiantou link-arrow" aria-hidden="true"></i>
       </RouterLink>
     </nav>
-
-    <nav v-if="normalizedTocItems.length" class="profile-toc" aria-label="本页目录">
-      <div class="profile-toc__head">
-        <span>本页目录</span>
-        <small>{{ normalizedTocItems.length }}</small>
-      </div>
-      <button
-        v-for="item in normalizedTocItems"
-        :key="`${item.type || 'toc'}-${item.id}`"
-        type="button"
-        class="profile-toc__item"
-        :class="{ 'is-active': isTocItemActive(item) }"
-        :title="item.title"
-        @click="handleTocItemClick(item)"
-      >
-        <span class="profile-toc__marker" aria-hidden="true"></span>
-        <span>{{ item.title }}</span>
-      </button>
-    </nav>
   </section>
 </template>
 
@@ -77,17 +58,6 @@ import { useSiteConfigStore } from '@/stores/siteConfigStore'
 const router = useRouter()
 const siteConfigStore = useSiteConfigStore()
 const dashboardStats = ref(null)
-const props = defineProps({
-  currentLocation: {
-    type: Object,
-    default: null,
-  },
-  tocItems: {
-    type: Array,
-    default: () => [],
-  },
-})
-const emit = defineEmits(['current-location-click'])
 
 const fallbackTags = ['Java', 'Spring Boot', 'Vue', 'MySQL']
 const fallbackLinks = [
@@ -122,29 +92,9 @@ const links = computed(() => {
   }))
   return normalized.length ? normalized : fallbackLinks
 })
-const normalizedTocItems = computed(() => {
-  const source = props.tocItems.length ? props.tocItems : (props.currentLocation ? [props.currentLocation] : [])
-  return source
-    .filter((item) => item?.id != null)
-    .map((item) => ({
-      ...item,
-      title: String(item.title || '无标题').trim() || '无标题',
-    }))
-})
 
 const toAbout = () => {
   router.push('/about')
-}
-
-function isTocItemActive(item) {
-  return String(item?.id) === String(props.currentLocation?.id)
-}
-
-function handleTocItemClick(item) {
-  if (item?.path) {
-    router.push(item.path)
-  }
-  emit('current-location-click', item)
 }
 
 function formatCount(value, fallback) {
@@ -384,91 +334,6 @@ onMounted(() => {
   font-size: 12px;
 }
 
-.profile-toc {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--blog-divider);
-}
-
-.profile-toc__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 6px;
-  color: var(--app-text-primary);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.profile-toc__head small {
-  color: var(--blog-meta);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.profile-toc__item {
-  display: grid;
-  grid-template-columns: 12px minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-  min-height: 34px;
-  padding: 6px 8px;
-  color: var(--app-text-secondary);
-  font: inherit;
-  text-align: left;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.profile-toc__item:hover {
-  color: var(--blog-link);
-  background: color-mix(in srgb, var(--blog-link) 7%, transparent);
-}
-
-.profile-toc__item.is-active {
-  color: var(--blog-link);
-  background: color-mix(in srgb, var(--blog-link) 8%, var(--app-surface));
-  border-color: color-mix(in srgb, var(--blog-link) 20%, var(--blog-card-border));
-}
-
-.profile-toc__marker {
-  width: 6px;
-  height: 6px;
-  justify-self: center;
-  border-radius: 50%;
-  background: var(--blog-card-border);
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.profile-toc__item.is-active .profile-toc__marker {
-  background: var(--blog-link);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--blog-link) 14%, transparent);
-  transform: scale(1.08);
-}
-
-.profile-toc__item span:last-child {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.45;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 @media (max-width: 900px) {
   .profile-card {
     padding: 18px;
@@ -480,15 +345,6 @@ onMounted(() => {
 
   .profile-link {
     grid-template-columns: 28px minmax(0, 1fr);
-  }
-
-  .profile-toc {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .profile-toc__head {
-    grid-column: 1 / -1;
   }
 
   .link-arrow {
@@ -507,10 +363,6 @@ onMounted(() => {
   }
 
   .profile-links {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-toc {
     grid-template-columns: 1fr;
   }
 }

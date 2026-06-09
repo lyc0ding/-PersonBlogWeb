@@ -4,18 +4,10 @@
 
     <div class="blog-grid">
       <main class="blog-main">
-        <Main
-          ref="articleMainRef"
-          @current-location-change="handleCurrentLocationChange"
-          @toc-items-change="handleTocItemsChange"
-        />
+        <Main />
       </main>
       <aside class="blog-aside">
-        <Introduction
-          :current-location="currentLocation"
-          :toc-items="tocItems"
-          @current-location-click="scrollToCurrentArticle"
-        />
+        <Introduction />
         <section class="widget">
           <h3 class="widget-title">标签云</h3>
           <TagCloud />
@@ -26,27 +18,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import TagCloud from '@/components/sidebar/TagCloud.vue'
 import Introduction from '@/components/sidebar/BlogProfileCard.vue'
 import Banner from './Banner.vue'
 import Main from './Main.vue'
-
-const articleMainRef = ref(null)
-const currentLocation = ref(null)
-const tocItems = ref([])
-
-function handleCurrentLocationChange(location) {
-  currentLocation.value = location
-}
-
-function handleTocItemsChange(items) {
-  tocItems.value = Array.isArray(items) ? items : []
-}
-
-function scrollToCurrentArticle(location) {
-  articleMainRef.value?.scrollToLocation?.(location)
-}
 </script>
 
 <style scoped>

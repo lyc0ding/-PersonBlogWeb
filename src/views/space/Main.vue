@@ -32,9 +32,6 @@
           v-else
           :key="item.id"
           class="moment-card"
-          :class="{ 'is-current': String(item.id) === String(currentMomentId) }"
-          :data-current-id="item.id"
-          :ref="(el) => setMomentCardRef(item.id, el)"
           role="link"
           tabindex="0"
           @click="openMoment(item.id)"
@@ -47,7 +44,7 @@
                 <h2 class="moment-title">
                   <RouterLink
                     :to="{ name: 'MomentDetail', params: { id: item.id } }"
-                    @click.stop="rememberMomentScroll"
+                    @click.stop
                   >
                     {{ item.title || '无标题动态' }}
                   </RouterLink>
@@ -84,7 +81,7 @@
                 <span><i class="iconfont icon-hot" /> {{ item.status === 1 ? '展示中' : '隐藏' }}</span>
                 <RouterLink
                   :to="{ name: 'MomentDetail', params: { id: item.id } }"
-                  @click.stop="rememberMomentScroll"
+                  @click.stop
                 >
                   查看详情
                 </RouterLink>
@@ -106,46 +103,29 @@
       </main>
 
       <aside class="space-side">
-        <PersonBox
-          :current-location="currentLocation"
-          :toc-items="momentTocItems"
-          @current-location-click="scrollToCurrentMoment"
-        />
+        <PersonBox />
       </aside>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, nextTick, onActivated, onBeforeUpdate, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import PersonBox from '@/components/sidebar/BlogProfileCard.vue'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import { timelinePageService } from '@/api/timeline'
-import {
-  hasWindowScrollRestoreMark,
-  readPageSnapshotForReturn,
-  rememberPageSnapshotForReturn,
-  restoreWindowScrollIfMarked,
-} from '@/utils/scrollMemory'
 
 const router = useRouter()
 const loading = ref(false)
 const error = ref('')
 const moments = ref([])
 const total = ref(0)
-const currentLocation = ref(null)
-const currentMomentId = ref(null)
-const momentCardRefs = new Map()
-const visibleMomentIds = new Map()
-let momentObserver = null
 
 const query = reactive({
   pageNum: 1,
   pageSize: 6,
 })
-
-const momentTocItems = computed(() => moments.value.map(buildCurrentMomentLocation).filter(Boolean))
 
 async function loadMoments() {
   loading.value = true
@@ -155,13 +135,9 @@ async function loadMoments() {
     const page = res?.data ?? res ?? {}
     moments.value = page.records ?? page.list ?? []
     total.value = page.total ?? moments.value.length
-    await nextTick()
-    syncMomentObserver()
-    updateCurrentMoment(moments.value[0])
   } catch (err) {
     moments.value = []
     total.value = 0
-    updateCurrentMoment(null)
     error.value = err?.message || '朋友圈动态加载失败，请确认后端 `/timeline/page` 可访问。'
   } finally {
     loading.value = false
@@ -177,36 +153,7 @@ const galleryClass = (count) => {
 
 function openMoment(id) {
   if (!id) return
-  rememberMomentScroll()
   router.push({ name: 'MomentDetail', params: { id } })
-}
-
-function rememberMomentScroll() {
-  rememberPageSnapshotForReturn('space', {
-    query: { ...query },
-    moments: moments.value,
-    total: total.value,
-    currentMomentId: currentMomentId.value,
-    currentLocation: currentLocation.value,
-  })
-}
-
-async function restoreMomentSnapshot() {
-  const snapshot = readPageSnapshotForReturn('space')
-  if (!snapshot?.moments) return false
-
-  Object.assign(query, snapshot.query || {})
-  moments.value = Array.isArray(snapshot.moments) ? snapshot.moments : []
-  total.value = Number.isFinite(snapshot.total) ? snapshot.total : moments.value.length
-  currentMomentId.value = snapshot.currentMomentId ?? null
-  currentLocation.value = snapshot.currentLocation ?? buildCurrentMomentLocation(moments.value[0])
-
-  await nextTick()
-  syncMomentObserver()
-  const currentItem = moments.value.find((item) => String(item.id) === String(currentMomentId.value))
-  updateCurrentMoment(currentItem || moments.value[0])
-  restoreWindowScrollIfMarked('space')
-  return true
 }
 
 const showImagePreview = ref(false)
@@ -226,106 +173,8 @@ function formatDate(value) {
   return String(value).replace(/-/g, '.').slice(0, 16)
 }
 
-function buildCurrentMomentLocation(item) {
-  if (!item) return null
-  const title = String(item.title || '无标题动态').trim()
-  return {
-    id: item.id,
-    title: title || '无标题动态',
-    icon: 'icon-xiaoxi',
-    type: 'moment',
-  }
-}
-
-function updateCurrentMoment(item) {
-  const location = buildCurrentMomentLocation(item)
-  currentMomentId.value = location?.id ?? null
-  currentLocation.value = location
-}
-
-function setMomentCardRef(id, el) {
-  if (el && id != null) {
-    momentCardRefs.set(String(id), el)
-  }
-}
-
-function syncMomentObserver() {
-  momentObserver?.disconnect()
-  visibleMomentIds.clear()
-
-  if (!momentCardRefs.size) return
-
-  if (typeof IntersectionObserver === 'undefined') {
-    updateCurrentMoment(moments.value[0])
-    return
-  }
-
-  momentObserver = new IntersectionObserver(handleMomentIntersections, {
-    root: null,
-    rootMargin: '-130px 0px -45% 0px',
-    threshold: [0, 0.12, 0.35, 0.65],
-  })
-
-  momentCardRefs.forEach((el) => momentObserver.observe(el))
-}
-
-function handleMomentIntersections(entries) {
-  entries.forEach((entry) => {
-    const id = String(entry.target.dataset.currentId || '')
-    if (!id) return
-
-    if (entry.isIntersecting) {
-      visibleMomentIds.set(id, entry.intersectionRatio)
-    } else {
-      visibleMomentIds.delete(id)
-    }
-  })
-
-  const currentId = Array.from(visibleMomentIds.entries())
-    .sort((a, b) => b[1] - a[1])[0]?.[0]
-
-  if (!currentId || currentId === String(currentMomentId.value)) return
-
-  const currentItem = moments.value.find((item) => String(item.id) === currentId)
-  updateCurrentMoment(currentItem)
-}
-
-function scrollToCurrentMoment(location = null) {
-  const id = typeof location === 'object' ? location?.id : (location ?? currentMomentId.value)
-  const target = id != null ? momentCardRefs.get(String(id)) : null
-  if (id != null) {
-    const currentItem = moments.value.find((item) => String(item.id) === String(id))
-    updateCurrentMoment(currentItem)
-  }
-  target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-}
-
-onBeforeUpdate(() => {
-  momentCardRefs.clear()
-})
-
 onMounted(() => {
-  if (hasWindowScrollRestoreMark('space')) {
-    restoreMomentSnapshot().then((restored) => {
-      if (!restored) loadMoments()
-    })
-  } else {
-    loadMoments()
-  }
-})
-
-onActivated(() => {
-  restoreWindowScrollIfMarked('space')
-})
-
-onBeforeRouteLeave((to) => {
-  if (to.name === 'MomentDetail') {
-    rememberMomentScroll()
-  }
-})
-
-onUnmounted(() => {
-  momentObserver?.disconnect()
+  loadMoments()
 })
 </script>
 
@@ -391,8 +240,7 @@ onUnmounted(() => {
 }
 
 .moment-card:hover .moment-panel,
-.moment-card:focus-visible .moment-panel,
-.moment-card.is-current .moment-panel {
+.moment-card:focus-visible .moment-panel {
   border-color: rgba(43, 108, 176, 0.28);
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
   transform: translateY(-1px);
