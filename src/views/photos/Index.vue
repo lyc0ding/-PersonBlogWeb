@@ -10,10 +10,14 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 import * as THREE from 'three'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import { photoPageService } from '@/api/photo'
+
+defineOptions({
+  name: 'PhotosPage',
+})
 
 const sceneEl = ref(null)
 const showImagePreview = ref(false)
@@ -60,15 +64,26 @@ let photoCards = []
 let interactiveMeshes = []
 let pointerHandlers = null
 let buildVersion = 0
+let sceneActive = true
 
 onMounted(() => {
   initScene()
   loadPhotos()
 })
 
+onActivated(() => {
+  sceneActive = true
+  resizeScene()
+  startAnimation()
+})
+
+onDeactivated(() => {
+  stopAnimation()
+})
+
 onBeforeUnmount(() => {
   disposed = true
-  cancelAnimationFrame(animationFrame)
+  stopAnimation()
   resizeObserver?.disconnect()
   removePointerEvents()
   clearCylinder()
@@ -110,7 +125,22 @@ function initScene() {
   resizeScene()
 
   clock = new THREE.Clock()
-  animate()
+  startAnimation()
+}
+
+function startAnimation() {
+  if (disposed || animationFrame || !renderer || !scene || !camera || !clock) return
+
+  sceneActive = true
+  clock?.getDelta()
+  animationFrame = requestAnimationFrame(animate)
+}
+
+function stopAnimation() {
+  sceneActive = false
+  cancelAnimationFrame(animationFrame)
+  animationFrame = 0
+  setHoveredCard(null)
 }
 
 function resizeScene() {
@@ -494,7 +524,15 @@ function closeImagePreview() {
 }
 
 function animate() {
-  if (disposed) return
+  if (disposed || !sceneActive) {
+    animationFrame = 0
+    return
+  }
+
+  if (!renderer || !scene || !camera || !clock) {
+    animationFrame = 0
+    return
+  }
 
   animationFrame = requestAnimationFrame(animate)
   const delta = Math.min(clock.getDelta(), 0.04)

@@ -8,9 +8,75 @@ const keepQueryRedirect = (path) => (to) => ({
     hash: to.hash,
 })
 
+const deferredScrollTargets = {
+    MomentDetail: {
+        listName: 'Space',
+        storageKey: 'personblog_space_scroll_target',
+    },
+    ArticleDetail: {
+        listName: 'Articles',
+        storageKey: 'personblog_article_scroll_target',
+    },
+}
+
+const cachedPageScrollKeyPrefix = 'personblog_cached_page_scroll:'
+
+const getScrollContainers = () => [
+    document.scrollingElement,
+    document.documentElement,
+    document.body,
+].filter((item, index, list) => item && list.indexOf(item) === index)
+
+const getCurrentScrollTop = () => {
+    if (typeof window === 'undefined') return 0
+
+    return Math.max(
+        window.scrollY || window.pageYOffset || 0,
+        ...getScrollContainers().map((container) => container.scrollTop || 0)
+    )
+}
+
+const getCachedPageScrollKey = (route) => {
+    const cacheName = route.meta?.cacheName || route.name
+    if (!cacheName) return ''
+    return `${cachedPageScrollKeyPrefix}${String(cacheName)}:${route.fullPath}`
+}
+
+const readCachedPageScroll = (route) => {
+    if (!route.meta?.keepAlive || typeof window === 'undefined') return null
+
+    const storageKey = getCachedPageScrollKey(route)
+    if (!storageKey) return null
+
+    const value = Number(window.sessionStorage.getItem(storageKey))
+    return Number.isFinite(value) ? Math.max(0, value) : null
+}
+
+const saveCachedPageScroll = (route) => {
+    if (!route.meta?.keepAlive || typeof window === 'undefined') return
+
+    const storageKey = getCachedPageScrollKey(route)
+    if (!storageKey) return
+
+    window.sessionStorage.setItem(storageKey, String(getCurrentScrollTop()))
+}
+
+const shouldDeferListScroll = (to, from) => {
+    const target = deferredScrollTargets[from.name]
+    if (!target || to.name !== target.listName || typeof window === 'undefined') {
+        return false
+    }
+
+    return Boolean(window.sessionStorage.getItem(target.storageKey))
+}
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     scrollBehavior(to, from, savedPosition) {
+        if (shouldDeferListScroll(to, from)) {
+            return false
+        }
+
         if (savedPosition) {
             return savedPosition
         }
@@ -20,6 +86,17 @@ const router = createRouter({
                 el: to.hash,
                 behavior: 'smooth',
             }
+        }
+
+        const cachedPageScrollTop = readCachedPageScroll(to)
+        if (cachedPageScrollTop != null) {
+            return new Promise((resolve) => {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        resolve({ top: cachedPageScrollTop })
+                    })
+                })
+            })
         }
 
         return { top: 0 }
@@ -62,7 +139,9 @@ const router = createRouter({
                     name: 'Home',
                     component: () => import('@/views/home/Index.vue'),
                     meta: {
-                        title: '首页'
+                        title: '首页',
+                        keepAlive: true,
+                        cacheName: 'HomePage',
                     }
                 },
                 {
@@ -70,7 +149,9 @@ const router = createRouter({
                     name: 'Space',
                     component: () => import('@/views/space/Index.vue'),
                     meta: {
-                        title: '朋友圈'
+                        title: '朋友圈',
+                        keepAlive: true,
+                        cacheName: 'SpacePage',
                     }
                 },
                 {
@@ -86,7 +167,9 @@ const router = createRouter({
                     name: 'Articles',
                     component: () => import('@/views/articles/Index.vue'),
                     meta: {
-                        title: '文章'
+                        title: '文章',
+                        keepAlive: true,
+                        cacheName: 'ArticlesPage',
                     }
                 },
                 {
@@ -102,7 +185,9 @@ const router = createRouter({
                     name: 'Comments',
                     component: () => import('@/views/comments/Index.vue'),
                     meta: {
-                        title: '留言板'
+                        title: '留言板',
+                        keepAlive: true,
+                        cacheName: 'CommentsPage',
                     }
                 },
                 {
@@ -110,7 +195,9 @@ const router = createRouter({
                     name: 'Photos',
                     component: () => import('@/views/photos/Index.vue'),
                     meta: {
-                        title: '照片'
+                        title: '照片',
+                        keepAlive: true,
+                        cacheName: 'PhotosPage',
                     }
                 },
                 {
@@ -118,15 +205,9 @@ const router = createRouter({
                     name: 'About',
                     component: () => import('@/views/about/Index.vue'),
                     meta: {
-                        title: '关于'
-                    }
-                },
-                {
-                    path: 'live',
-                    name: 'Live',
-                    component: () => import('@/views/live/Index.vue'),
-                    meta: {
-                        title: '关于我'
+                        title: '关于',
+                        keepAlive: true,
+                        cacheName: 'AboutPage',
                     }
                 },
             ]
@@ -253,6 +334,7 @@ router.afterEach(() => {
 
 
 router.beforeEach((to, from) => {
+    saveCachedPageScroll(from)
     start()
     const tagStore = useTagStore()
     // 添加标签

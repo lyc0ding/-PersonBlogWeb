@@ -88,6 +88,10 @@
 import { onMounted, ref } from 'vue'
 import { publicAboutService } from '@/api/about'
 
+defineOptions({
+  name: 'AboutPage',
+})
+
 const loading = ref(false)
 const about = ref(defaultAbout())
 const unavailable = ref(false)

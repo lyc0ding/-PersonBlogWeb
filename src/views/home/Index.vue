@@ -1,6 +1,10 @@
 <script setup>
 import HomeHero from '@/views/home/HomeHero.vue'
 import Main from '@/views/home/Main.vue'
+
+defineOptions({
+  name: 'HomePage',
+})
 </script>
 
 <template>

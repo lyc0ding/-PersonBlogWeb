@@ -12,10 +12,12 @@
         <main>
             <router-view v-slot="{ Component, route }">
                 <transition name="fade" mode="out-in">
-                    <component
-                        :is="Component"
-                        :key="route.fullPath"
-                    />
+                    <KeepAlive :include="cachedPageNames">
+                        <component
+                            :is="Component"
+                            :key="route.meta.keepAlive ? route.meta.cacheName : route.fullPath"
+                        />
+                    </KeepAlive>
                 </transition>
             </router-view>
         </main>
@@ -27,6 +29,15 @@
 <script setup>
 import Nav from '@/components/nav/TopNav.vue'
 import FloatingTools from '@/components/layout/FloatingTools.vue'
+
+const cachedPageNames = [
+    'HomePage',
+    'SpacePage',
+    'ArticlesPage',
+    'CommentsPage',
+    'PhotosPage',
+    'AboutPage',
+]
 </script>
 
 <style lang="scss" scoped>
@@ -56,5 +67,31 @@ import FloatingTools from '@/components/layout/FloatingTools.vue'
         margin-top: var(--blog-header-height, 118px);
         position: relative;
         min-height: calc(100vh - var(--blog-header-height, 118px));
+    }
+
+    .fade-enter-active,
+    .fade-leave-active {
+        transition:
+            opacity 0.16s ease,
+            transform 0.16s ease;
+    }
+
+    .fade-enter-from,
+    .fade-leave-to {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: none;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 1;
+            transform: none;
+        }
     }
 </style>
