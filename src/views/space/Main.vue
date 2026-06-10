@@ -31,11 +31,13 @@
           v-for="item in moments"
           v-else
           :key="item.id"
+          :ref="(el) => setMomentCardRef(el, item.id)"
+          :data-moment-id="item.id"
           class="moment-card"
           role="link"
           tabindex="0"
-          @click="openMoment(item.id)"
-          @keydown.enter="openMoment(item.id)"
+          @click="openMoment(item)"
+          @keydown.enter="openMoment(item)"
         >
           <div class="moment-panel">
             <header class="moment-head">
@@ -44,7 +46,7 @@
                 <h2 class="moment-title">
                   <RouterLink
                     :to="{ name: 'MomentDetail', params: { id: item.id } }"
-                    @click.stop
+                    @click.stop="rememberMomentPosition(item)"
                   >
                     {{ item.title || '无标题动态' }}
                   </RouterLink>
@@ -81,7 +83,7 @@
                 <span><i class="iconfont icon-hot" /> {{ item.status === 1 ? '展示中' : '隐藏' }}</span>
                 <RouterLink
                   :to="{ name: 'MomentDetail', params: { id: item.id } }"
-                  @click.stop
+                  @click.stop="rememberMomentPosition(item)"
                 >
                   查看详情
                 </RouterLink>
@@ -110,17 +112,19 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onBeforeUpdate, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PersonBox from '@/components/sidebar/BlogProfileCard.vue'
 import ImagePreviewer from '@/components/image/ImagePreviewer.vue'
 import { timelinePageService } from '@/api/timeline'
 
 const router = useRouter()
+const SPACE_SCROLL_TARGET_KEY = 'personblog_space_scroll_target'
 const loading = ref(false)
 const error = ref('')
 const moments = ref([])
 const total = ref(0)
+const momentCardRefs = new Map()
 
 const query = reactive({
   pageNum: 1,
@@ -135,6 +139,7 @@ async function loadMoments() {
     const page = res?.data ?? res ?? {}
     moments.value = page.records ?? page.list ?? []
     total.value = page.total ?? moments.value.length
+    await restoreMomentPosition()
   } catch (err) {
     moments.value = []
     total.value = 0
@@ -151,9 +156,60 @@ const galleryClass = (count) => {
   return 'gallery-grid'
 }
 
-function openMoment(id) {
+function setMomentCardRef(el, id) {
   if (!id) return
-  router.push({ name: 'MomentDetail', params: { id } })
+  if (el) {
+    momentCardRefs.set(String(id), el)
+  }
+}
+
+function rememberMomentPosition(item) {
+  if (!item?.id) return
+  sessionStorage.setItem(SPACE_SCROLL_TARGET_KEY, JSON.stringify({
+    id: String(item.id),
+    pageNum: query.pageNum,
+    pageSize: query.pageSize,
+  }))
+}
+
+function openMoment(item) {
+  if (!item?.id) return
+  rememberMomentPosition(item)
+  router.push({ name: 'MomentDetail', params: { id: item.id } })
+}
+
+function readMomentPositionTarget() {
+  const rawTarget = sessionStorage.getItem(SPACE_SCROLL_TARGET_KEY)
+  if (!rawTarget) return null
+
+  try {
+    return JSON.parse(rawTarget)
+  } catch {
+    sessionStorage.removeItem(SPACE_SCROLL_TARGET_KEY)
+    return null
+  }
+}
+
+async function restoreMomentPosition() {
+  const target = readMomentPositionTarget()
+  if (!target) return
+
+  if (Number(target.pageNum) !== query.pageNum || Number(target.pageSize) !== query.pageSize) {
+    return
+  }
+
+  await nextTick()
+  const targetElement = momentCardRefs.get(String(target.id))
+  if (!targetElement) {
+    sessionStorage.removeItem(SPACE_SCROLL_TARGET_KEY)
+    return
+  }
+
+  sessionStorage.removeItem(SPACE_SCROLL_TARGET_KEY)
+  targetElement.scrollIntoView({
+    behavior: 'auto',
+    block: 'start',
+  })
 }
 
 const showImagePreview = ref(false)
@@ -173,7 +229,16 @@ function formatDate(value) {
   return String(value).replace(/-/g, '.').slice(0, 16)
 }
 
+onBeforeUpdate(() => {
+  momentCardRefs.clear()
+})
+
 onMounted(() => {
+  const target = readMomentPositionTarget()
+  if (target) {
+    query.pageNum = Number(target.pageNum) || query.pageNum
+    query.pageSize = Number(target.pageSize) || query.pageSize
+  }
   loadMoments()
 })
 </script>
@@ -223,6 +288,7 @@ onMounted(() => {
   position: relative;
   display: block;
   min-height: 430px;
+  scroll-margin-top: calc(var(--blog-header-height, 118px) + 16px);
 }
 
 .moment-panel {

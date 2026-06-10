@@ -25,14 +25,16 @@
     <el-empty v-else-if="!contentList.length" description="暂无文章" />
 
     <article
-      v-for="(item, index) in contentList"
+      v-for="item in contentList"
       v-else
       :key="item.id"
+      :ref="(el) => setArticleCardRef(el, item.id)"
+      :data-article-id="item.id"
       class="post-card"
       role="link"
       tabindex="0"
-      @click="openArticle(item.id)"
-      @keydown.enter="openArticle(item.id)"
+      @click="openArticle(item)"
+      @keydown.enter="openArticle(item)"
     >
       <!-- 封面背景层 + 文字内容层 -->
       <div class="post-cover" :style="getItemBgStyle(item)" aria-hidden="true" />
@@ -41,7 +43,7 @@
         <h2 class="post-title">
           <RouterLink
             :to="{ name: 'ArticleDetail', params: { id: item.id } }"
-            @click.stop
+            @click.stop="rememberArticlePosition(item)"
           >
             {{ item.title }}
           </RouterLink>
@@ -56,7 +58,7 @@
         <p class="post-more">
           <RouterLink
             :to="{ name: 'ArticleDetail', params: { id: item.id } }"
-            @click.stop
+            @click.stop="rememberArticlePosition(item)"
           >
             阅读全文
           </RouterLink>
@@ -77,16 +79,18 @@
   </div>
 </template>
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue'
+import { nextTick, onBeforeUpdate, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { publicArticlePageService } from '@/api/article'
 
 const route = useRoute()
 const router = useRouter()
+const ARTICLE_SCROLL_TARGET_KEY = 'personblog_article_scroll_target'
 const loading = ref(false)
 const error = ref('')
 const contentList = ref([])
 const total = ref(0)
+const articleCardRefs = new Map()
 
 const query = reactive({
   pageNum: 1,
@@ -111,6 +115,7 @@ async function loadArticles() {
     const page = res?.data ?? res ?? {}
     contentList.value = page.records ?? page.list ?? []
     total.value = page.total ?? contentList.value.length
+    await restoreArticlePosition()
   } catch (err) {
     contentList.value = []
     total.value = 0
@@ -120,9 +125,65 @@ async function loadArticles() {
   }
 }
 
-function openArticle(id) {
+function setArticleCardRef(el, id) {
   if (!id) return
-  router.push({ name: 'ArticleDetail', params: { id } })
+  if (el) {
+    articleCardRefs.set(String(id), el)
+  }
+}
+
+function rememberArticlePosition(item) {
+  if (!item?.id) return
+  sessionStorage.setItem(ARTICLE_SCROLL_TARGET_KEY, JSON.stringify({
+    id: String(item.id),
+    pageNum: query.pageNum,
+    pageSize: query.pageSize,
+    keyword: query.keyword,
+  }))
+}
+
+function openArticle(item) {
+  if (!item?.id) return
+  rememberArticlePosition(item)
+  router.push({ name: 'ArticleDetail', params: { id: item.id } })
+}
+
+function readArticlePositionTarget() {
+  const rawTarget = sessionStorage.getItem(ARTICLE_SCROLL_TARGET_KEY)
+  if (!rawTarget) return null
+
+  try {
+    return JSON.parse(rawTarget)
+  } catch {
+    sessionStorage.removeItem(ARTICLE_SCROLL_TARGET_KEY)
+    return null
+  }
+}
+
+async function restoreArticlePosition() {
+  const target = readArticlePositionTarget()
+  if (!target) return
+
+  if (
+    Number(target.pageNum) !== query.pageNum ||
+    Number(target.pageSize) !== query.pageSize ||
+    (target.keyword || '') !== query.keyword
+  ) {
+    return
+  }
+
+  await nextTick()
+  const targetElement = articleCardRefs.get(String(target.id))
+  if (!targetElement) {
+    sessionStorage.removeItem(ARTICLE_SCROLL_TARGET_KEY)
+    return
+  }
+
+  sessionStorage.removeItem(ARTICLE_SCROLL_TARGET_KEY)
+  targetElement.scrollIntoView({
+    behavior: 'auto',
+    block: 'start',
+  })
 }
 
 function resolveCategory(post) {
@@ -134,8 +195,17 @@ function formatDate(value) {
   return String(value).replace(/-/g, '.').slice(0, 16)
 }
 
+onBeforeUpdate(() => {
+  articleCardRefs.clear()
+})
+
 onMounted(() => {
-  if (typeof route.query.q === 'string') {
+  const target = readArticlePositionTarget()
+  if (target) {
+    query.pageNum = Number(target.pageNum) || query.pageNum
+    query.pageSize = Number(target.pageSize) || query.pageSize
+    query.keyword = typeof target.keyword === 'string' ? target.keyword : query.keyword
+  } else if (typeof route.query.q === 'string') {
     query.keyword = route.query.q
   }
   loadArticles()
@@ -178,6 +248,7 @@ watch(
   overflow: hidden;
   border-bottom: 1px solid var(--blog-divider);
   cursor: pointer;
+  scroll-margin-top: calc(var(--blog-header-height, 118px) + 16px);
   transition:
     background-color 0.24s ease,
     box-shadow 0.24s ease,
