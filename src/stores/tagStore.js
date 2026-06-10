@@ -3,8 +3,7 @@ import { defineStore } from 'pinia'
 
 export const useTagStore = defineStore('tags', {
   state: () => ({
-    visitedTags: [],
-    cachedTags: []
+    visitedTags: []
   }),
   
   actions: {
@@ -25,10 +24,6 @@ export const useTagStore = defineStore('tags', {
       const existingTag = this.visitedTags.find(item => item.path === path)
       if (!existingTag) {
         this.visitedTags.push(tag)
-        // 添加到缓存
-        if (!this.cachedTags.includes(name)) {
-          this.cachedTags.push(name)
-        }
       }
     },
     
@@ -41,12 +36,6 @@ export const useTagStore = defineStore('tags', {
         const index = this.visitedTags.findIndex(item => item.path === tag.path)
         if (index > -1) {
           this.visitedTags.splice(index, 1)
-          
-          // 从缓存中移除
-          const cachedIndex = this.cachedTags.indexOf(tag.name)
-          if (cachedIndex > -1) {
-            this.cachedTags.splice(cachedIndex, 1)
-          }
         }
         resolve()
       })
@@ -57,13 +46,11 @@ export const useTagStore = defineStore('tags', {
       this.visitedTags = this.visitedTags.filter(item => 
         item.affix || item.path === tag.path
       )
-      this.cachedTags = this.visitedTags.map(item => item.name)
     },
     
     // 删除所有标签
     deleteAllTags() {
       this.visitedTags = this.visitedTags.filter(item => item.affix)
-      this.cachedTags = this.visitedTags.map(item => item.name)
     },
     
     // 更新标签路径（用于动态路由）
@@ -74,15 +61,5 @@ export const useTagStore = defineStore('tags', {
         tag.fullPath = newFullPath
       }
     }
-  },
-  
-  persist: {
-    enabled: true,
-    strategies: [
-      {
-        key: 'tag-store',
-        storage: localStorage
-      }
-    ]
   }
 })

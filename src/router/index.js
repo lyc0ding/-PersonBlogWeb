@@ -10,27 +10,12 @@ const keepQueryRedirect = (path) => (to) => ({
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
-    scrollBehavior(to, from, savedPosition) {
-        if (
-            (from.name === 'ArticleDetail' && to.name === 'Articles') ||
-            (from.name === 'MomentDetail' && to.name === 'Space')
-        ) {
-            return { top: 0 }
-        }
-
-        if (savedPosition) {
-            return savedPosition
-        }
-
+    scrollBehavior(to) {
         if (to.hash) {
             return {
                 el: to.hash,
                 behavior: 'smooth',
             }
-        }
-
-        if (to.name === 'ArticleDetail' || to.name === 'MomentDetail') {
-            return { top: 0 }
         }
 
         return { top: 0 }
@@ -73,7 +58,6 @@ const router = createRouter({
                     name: 'Home',
                     component: () => import('@/views/home/Index.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '首页'
                     }
                 },
@@ -82,7 +66,6 @@ const router = createRouter({
                     name: 'Space',
                     component: () => import('@/views/space/Index.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '朋友圈'
                     }
                 },
@@ -91,7 +74,6 @@ const router = createRouter({
                     name: 'MomentDetail',
                     component: () => import('@/views/space/Detail.vue'),
                     meta: {
-                        keepAlive: false,
                         title: '朋友圈详情'
                     }
                 },
@@ -100,7 +82,6 @@ const router = createRouter({
                     name: 'Articles',
                     component: () => import('@/views/articles/Index.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '文章'
                     }
                 },
@@ -109,7 +90,6 @@ const router = createRouter({
                     name: 'ArticleDetail',
                     component: () => import('@/views/articles/Detail.vue'),
                     meta: {
-                        keepAlive: false,
                         title: '文章详情'
                     }
                 },
@@ -118,7 +98,6 @@ const router = createRouter({
                     name: 'Comments',
                     component: () => import('@/views/comments/Index.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '留言板'
                     }
                 },
@@ -127,7 +106,6 @@ const router = createRouter({
                     name: 'Photos',
                     component: () => import('@/views/photos/Index.vue'),
                     meta: {
-                        keepAlive: true,
                         title: '照片'
                     }
                 },
@@ -136,7 +114,6 @@ const router = createRouter({
                     name: 'About',
                     component: () => import('@/views/about/Index.vue'),
                     meta: {
-                        keepAlive: true,
                         title: '关于'
                     }
                 },
@@ -145,7 +122,6 @@ const router = createRouter({
                     name: 'Live',
                     component: () => import('@/views/live/Index.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '关于我'
                     }
                 },
@@ -157,7 +133,6 @@ const router = createRouter({
             component: () => import('@/layouts/AdminLayout.vue'),
             redirect: '/admin/dashboard',
             meta: {
-                keepAlive: true, // 启用缓存
                 title: '仪表盘'
             },
             children: [
@@ -171,7 +146,6 @@ const router = createRouter({
                     name: 'Dashboard',
                     component: () => import('@/views/admin/Dashboard.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '首页'
                     },
                 },
@@ -180,7 +154,6 @@ const router = createRouter({
                     name: 'User',
                     component: () => import('@/views/admin/User.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '用户管理'
                     },
                 },
@@ -189,7 +162,6 @@ const router = createRouter({
                     name: 'Setting',
                     component: () => import('@/views/admin/Setting.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '系统设置'
                     },
                 },
@@ -198,7 +170,6 @@ const router = createRouter({
                     name: 'AdminArticles',
                     component: () => import('@/views/admin/articles/ArticleManage.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存
                         title: '文章管理'
                     },
                 },
@@ -207,7 +178,6 @@ const router = createRouter({
                     name: 'AdminArticleCreate',
                     component: () => import('@/views/admin/articles/ArticlePublish.vue'),
                     meta: {
-                        keepAlive: false,
                         title: '新增文章'
                     },
                 },
@@ -216,7 +186,6 @@ const router = createRouter({
                     name: 'AdminArticleEdit',
                     component: () => import('@/views/admin/articles/ArticlePublish.vue'),
                     meta: {
-                        keepAlive: false,
                         title: '编辑文章'
                     },
                 },
@@ -225,7 +194,6 @@ const router = createRouter({
                     name: 'AdminArticleTags',
                     component: () => import('@/views/admin/articles/TagManage.vue'),
                     meta: {
-                        keepAlive: true, // 启用缓存  
                         title: '标签管理'
                     },
                 },
@@ -234,7 +202,6 @@ const router = createRouter({
                     name: 'TimelineManage',
                     component: () => import('@/views/admin/TimelineManage.vue'),
                     meta: {
-                        keepAlive: true,
                         title: '朋友圈管理'
                     },
                 },
@@ -243,7 +210,6 @@ const router = createRouter({
                     name: 'BuildTimelineManage',
                     component: () => import('@/views/admin/BuildTimelineManage.vue'),
                     meta: {
-                        keepAlive: true,
                         title: '建站时间线'
                     },
                 },
@@ -252,7 +218,6 @@ const router = createRouter({
                     name: 'PhotoManage',
                     component: () => import('@/views/admin/PhotoManage.vue'),
                     meta: {
-                        keepAlive: true,
                         title: '照片管理'
                     },
                 },
@@ -261,7 +226,6 @@ const router = createRouter({
                     name: 'AboutManage',
                     component: () => import('@/views/admin/AboutManage.vue'),
                     meta: {
-                        keepAlive: true,
                         title: '关于页面'
                     },
                 },
@@ -270,20 +234,10 @@ const router = createRouter({
                     name: 'CommentManage',
                     component: () => import('@/views/admin/CommentManage.vue'),
                     meta: {
-                        keepAlive: true,
                         title: '留言评论管理'
                     },
                 }
             ]
-        },
-        {
-            path: '/lab/article-editor',
-            name: 'ArticleEditorDemo',
-            component: () => import('@/views/lab/ArticleEditorDemo.vue'),
-        },
-        {
-            path: '/test',
-            redirect: '/lab/article-editor',
         }
     ],
 
