@@ -73,14 +73,17 @@ const shouldDeferListScroll = (to, from) => {
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     scrollBehavior(to, from, savedPosition) {
+        // 详情页返回列表页 → 返回 false，让 Vue Router 不干预滚动，由列表组件自行恢复
         if (shouldDeferListScroll(to, from)) {
             return false
         }
 
+        // 浏览器前进/后退
         if (savedPosition) {
             return savedPosition
         }
 
+        // 带 hash 的锚点跳转
         if (to.hash) {
             return {
                 el: to.hash,
@@ -88,17 +91,7 @@ const router = createRouter({
             }
         }
 
-        const cachedPageScrollTop = readCachedPageScroll(to)
-        if (cachedPageScrollTop != null) {
-            return new Promise((resolve) => {
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        resolve({ top: cachedPageScrollTop })
-                    })
-                })
-            })
-        }
-
+        // 其他所有导航切换 → 统一从顶部开始
         return { top: 0 }
     },
     routes: [
